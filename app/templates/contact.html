@@ -6,13 +6,64 @@ Contact
 
 {% block content %}
 
-<div class="text-center">
+<div class="card shadow p-4">
 
-    <h1>Contact Us</h1>
+    <h2 class="text-center mb-4">
+        Contact Us
+    </h2>
 
-    <p class="lead">
-        Feel free to reach out for any questions.
-    </p>
+    <form>
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Name
+            </label>
+
+            <input
+                type="text"
+                class="form-control"
+                placeholder="Enter your name">
+
+        </div>
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Email
+            </label>
+
+            <input
+                type="email"
+                class="form-control"
+                placeholder="Enter your email">
+
+        </div>
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Message
+            </label>
+
+            <textarea
+                class="form-control"
+                rows="5"
+                placeholder="Write your message"></textarea>
+
+        </div>
+
+        <button
+            type="button"
+            class="btn btn-primary">
+            Send
+        </button>
+
+    </form>
+
+    <div class="alert alert-secondary mt-4 text-center">
+        🚧 Contact functionality will be added later.
+    </div>
 
 </div>
 
