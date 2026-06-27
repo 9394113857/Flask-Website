@@ -1,0 +1,7 @@
+Teaching Order I'd Follow
+HTML Validation (required, type, min, max)
+Flask Validation (server-side checks in the controller)
+JavaScript Validation (better user experience)
+AJAX / Fetch API (no page refresh)
+
+That way she understands the responsibility of each layer.

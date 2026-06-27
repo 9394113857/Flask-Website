@@ -7,8 +7,7 @@
     <meta charset="UTF-8">
 
     <!-- Mobile Responsive -->
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Page Title -->
     <title>
@@ -18,162 +17,145 @@
     </title>
 
     <!-- Bootstrap CSS -->
-    <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/lab_flask_test_tube.ico') }}">
 
 </head>
 
 <body>
 
 
-<!-- ================= NAVBAR ================= -->
+    <!-- ================= NAVBAR ================= -->
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
 
-    <div class="container">
+        <div class="container">
 
-        <a class="navbar-brand"
-           href="{{ url_for('home.home') }}">
+            <a class="navbar-brand" href="{{ url_for('home.home') }}">
 
-            Flask Website
+                Flask Website
 
-        </a>
+            </a>
 
-        <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
 
-            <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
 
-        </button>
+            </button>
 
-        <div
-        class="collapse navbar-collapse"
-        id="navbarNav">
+            <div class="collapse navbar-collapse" id="navbarNav">
 
-            <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto">
 
-                <li class="nav-item">
+                    <li class="nav-item">
 
-                    <a class="nav-link"
-                       href="{{ url_for('home.home') }}">
+                        <a class="nav-link" href="{{ url_for('home.home') }}">
 
-                        Home
+                            Home
 
-                    </a>
+                        </a>
 
-                </li>
+                    </li>
 
-                <li class="nav-item">
+                    <li class="nav-item">
 
-                    <a class="nav-link"
-                       href="/calculator">
+                        <a class="nav-link" href="/calculator">
 
-                        Calculator
+                            Calculator
 
-                    </a>
+                        </a>
 
-                </li>
+                    </li>
 
-                <li class="nav-item">
+                    <li class="nav-item">
 
-                    <a class="nav-link"
-                       href="/bmi">
+                        <a class="nav-link" href="/bmi">
 
-                        BMI
+                            BMI
 
-                    </a>
+                        </a>
 
-                </li>
+                    </li>
 
-                <li class="nav-item">
+                    <li class="nav-item">
 
-                    <a class="nav-link"
-                       href="/flames">
+                        <a class="nav-link" href="/flames">
 
-                        FLAMES
+                            FLAMES
 
-                    </a>
+                        </a>
 
-                </li>
+                    </li>
 
-                <li class="nav-item">
+                    <li class="nav-item">
 
-                    <a class="nav-link"
-                       href="/guess">
+                        <a class="nav-link" href="/guess">
 
-                        Guess
+                            Guess
 
-                    </a>
+                        </a>
 
-                </li>
+                    </li>
 
-                <li class="nav-item">
+                    <li class="nav-item">
 
-                    <a class="nav-link"
-                       href="/about">
+                        <a class="nav-link" href="/about">
 
-                        About
+                            About
 
-                    </a>
+                        </a>
 
-                </li>
+                    </li>
 
-                <li class="nav-item">
+                    <li class="nav-item">
 
-                    <a class="nav-link"
-                       href="/contact">
+                        <a class="nav-link" href="/contact">
 
-                        Contact
+                            Contact
 
-                    </a>
+                        </a>
 
-                </li>
+                    </li>
 
-            </ul>
+                </ul>
+
+            </div>
 
         </div>
 
+    </nav>
+
+
+    <!-- ================= PAGE CONTENT ================= -->
+
+    <div class="container mt-5 mb-5">
+
+        {% block content %}
+
+        {% endblock %}
+
     </div>
 
-</nav>
+
+    <!-- ================= FOOTER ================= -->
+
+    <footer class="bg-dark text-white text-center p-3">
+
+        © 2026 Flask Website
+
+    </footer>
 
 
-<!-- ================= PAGE CONTENT ================= -->
+    <!-- Bootstrap JS -->
 
-<div class="container mt-5 mb-5">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
 
-    {% block content %}
-
-    {% endblock %}
-
-</div>
-
-
-<!-- ================= FOOTER ================= -->
-
-<footer
-class="bg-dark text-white text-center p-3">
-
-    © 2026 Flask Website
-
-</footer>
-
-
-<!-- Bootstrap JS -->
-
-<script
-src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
-
-</script>
+    </script>
 
 </body>
 

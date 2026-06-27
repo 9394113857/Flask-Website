@@ -1,0 +1,57 @@
+1.
+Logging
+
+↓
+
+2.
+404 & 500
+
+↓
+
+3.
+BMI
+
+↓
+
+4.
+FLAMES
+
+↓
+
+5.
+Guess Game
+
+↓
+
+6.
+SQLite
+
+↓
+
+7.
+SQLAlchemy
+
+↓
+
+8.
+Authentication
+
+↓
+
+9.
+REST APIs
+
+↓
+
+10.
+Docker
+
+↓
+
+11.
+GitHub Actions
+
+↓
+
+12.
+CI/CD
