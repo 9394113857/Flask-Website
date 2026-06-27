@@ -1,0 +1,14 @@
+base.html
+     ▲
+     │
+ ┌───┼───────────────┐
+ │   │               │
+ │   │               │
+home.html     calculator.html
+ │                   │
+ │                   │
+bmi.html       flames.html
+ │
+about.html
+
+contact.html
