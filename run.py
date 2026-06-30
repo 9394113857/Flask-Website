@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
 # $env:FLASK_APP="run.py"
 
-# flask run --host=0.0.0.0 --port=5001 --debug
+# lask run --host=0.0.0.0 --fport=5001 --debug
 # This will auto-reload the server on code changes.
 ###################################################    
     
