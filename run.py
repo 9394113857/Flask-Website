@@ -32,10 +32,7 @@ if __name__ == "__main__":
 # $env:FLASK_APP="run.py"
 
 # Verify:
-# echo $env:FLASK_APP
-
-# Show all registered routes:
-# flask routes
+# ho $env:FLASK_APPjhih
 
 # Run Flask application
 # flask run --host=0.0.0.0 --port=5001
