@@ -1,0 +1,13 @@
+git checkout main
+git reset --hard render-deployment
+git push --force origin main
+==============================================================
+git push --set-upstream origin feature/main-enhancements
+==============================================================
+:wq Enter and git push
+==============================================================
+git push --set-upstream origin feature/navbar-enhancement
+==============================================================
+
+
+
