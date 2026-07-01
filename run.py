@@ -35,7 +35,7 @@ if __name__ == "__main__":
 # Windows PowerShell:
 # $env:FLASK_APP="run.py"
 
-# Verify:
+# Verify: 
 # echo $env:FLASK_APP
 
 # Remove the environment variable from the current session
