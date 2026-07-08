@@ -1,11 +1,12 @@
 # ============================================================
-# 🧪 FLASK APPLICATION BASIC TEST
+# 🧪 FLASK APPLICATION TEST
 #
-# Purpose:
+# Checks:
 #
-# - Verify Flask application can start
-# - Verify root endpoint is reachable
-# - Used by GitHub Actions CI
+# 1. Flask app can initialize
+# 2. Root endpoint returns HTTP 200
+#
+# Used by GitHub Actions CI
 #
 # ============================================================
 
@@ -17,18 +18,22 @@ from app import create_app
 
 
 
+
 # ============================================================
 # 🔧 CREATE TEST CLIENT
 #
-# This creates an isolated Flask test environment.
+# Uses your existing create_app()
+# No testing argument because your factory
+# currently does not accept it.
 #
 # ============================================================
+
 
 @pytest.fixture
 def client():
 
 
-    app = create_app(testing=True)
+    app = create_app()
 
 
     app.config.update(
@@ -46,16 +51,15 @@ def client():
 
 
 # ============================================================
-# ❤️ HEALTH CHECK TEST
-#
-# Expected:
+# ❤️ ROOT HEALTH TEST
 #
 # GET /
 #
-# Response:
+# Expected:
 # HTTP 200
 #
 # ============================================================
+
 
 def test_home_page(client):
 
