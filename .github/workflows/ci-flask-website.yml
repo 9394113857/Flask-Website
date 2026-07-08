@@ -3,7 +3,7 @@
 #
 # Workflow:
 #
-# Every push:
+# Normal push:
 #       ✅ Install dependencies
 #       ✅ Run tests
 #
@@ -11,18 +11,17 @@
 #       ✅ Install dependencies
 #       ✅ Run tests
 #
-# Version Tag:
-#       ✅ Run tests
-#       ✅ Build Docker image
-#       ✅ Push Docker image
-#
-# Docker push happens ONLY for:
+# Version tag:
 #
 #       v1.0.0
 #       v1.0.1
-#       v2.0.0
 #
-# Normal commits never push Docker.
+#       ✅ Run tests
+#       ✅ Build Docker image
+#       ✅ Push version image
+#       ✅ Push latest image
+#
+# Docker push NEVER happens on normal commits.
 #
 # ============================================================
 
@@ -30,28 +29,27 @@
 name: 🚀 CI Flask Website Service
 
 
-
+# ============================================================
+# EVENTS
+# ============================================================
 
 on:
 
 
   # ----------------------------------------------------------
-  # All branch pushes
+  # Every branch push
   # ----------------------------------------------------------
 
   push:
-
 
     branches:
 
       - "**"
 
 
-
     tags:
 
       - "v*"
-
 
 
 
@@ -63,9 +61,8 @@ on:
 
 
 
-
   # ----------------------------------------------------------
-  # Manual execution
+  # Manual trigger
   # ----------------------------------------------------------
 
   workflow_dispatch:
@@ -73,17 +70,19 @@ on:
 
 
 
+# ============================================================
+# JOBS
+# ============================================================
+
 
 jobs:
-
-
 
 
 
 # ============================================================
 # 🧪 TEST JOB
 #
-# Runs always
+# Runs for every push and PR
 #
 # ============================================================
 
@@ -98,20 +97,16 @@ jobs:
 
 
 
-
     steps:
 
 
-
-
       # ------------------------------------------------------
-      # Checkout
+      # Checkout code
       # ------------------------------------------------------
 
       - name: 📥 Checkout Repository
 
         uses: actions/checkout@v4
-
 
 
 
@@ -131,39 +126,33 @@ jobs:
 
 
 
-
       # ------------------------------------------------------
-      # Install packages
+      # Install dependencies
       # ------------------------------------------------------
 
       - name: 📦 Install Dependencies
 
         run: |
 
-
           python -m pip install --upgrade pip
 
-
           pip install -r requirements.txt
-
 
           pip install pytest
 
 
 
 
-
       # ------------------------------------------------------
-      # Show structure
+      # Debug project structure
       #
-      # Helps debugging import issues
+      # Helps find import problems
       #
       # ------------------------------------------------------
 
-      - name: 🔍 Project Structure
+      - name: 🔍 Show Project Structure
 
         run: |
-
 
           pwd
 
@@ -174,24 +163,18 @@ jobs:
 
 
 
-
       # ------------------------------------------------------
-      # Run tests
-      #
-      # PYTHONPATH tells Python where app package exists
-      #
+      # Run Flask tests
       # ------------------------------------------------------
 
       - name: 🧪 Run Tests
 
         env:
 
-
           PYTHONPATH: .
 
 
         run: |
-
 
           pytest -v
 
@@ -202,11 +185,11 @@ jobs:
 # ============================================================
 # 🐳 DOCKER RELEASE JOB
 #
-# Runs ONLY when version tag created
+# ONLY runs when version tag created
 #
 # Example:
 #
-# git tag v1.0.0
+# v1.0.0
 #
 # ============================================================
 
@@ -227,11 +210,13 @@ jobs:
 
 
 
-
-
     steps:
 
 
+
+      # ------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------
 
       - name: 📥 Checkout Repository
 
@@ -241,15 +226,17 @@ jobs:
 
 
 
+      # ------------------------------------------------------
+      # Docker Hub login
+      # ------------------------------------------------------
+
       - name: 🔐 Docker Hub Login
 
         uses: docker/login-action@v3
 
         with:
 
-
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-
 
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -259,9 +246,7 @@ jobs:
 
 
       # ------------------------------------------------------
-      # Extract tag version
-      #
-      # Example:
+      # Extract Git tag
       #
       # refs/tags/v1.0.0
       #
@@ -271,43 +256,15 @@ jobs:
       #
       # ------------------------------------------------------
 
-      - name: 🏷️ Get Version
+      - name: 🏷️ Get Release Version
 
         run: |
-
 
           VERSION=${GITHUB_REF#refs/tags/}
 
-
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-
-
-
-
-
-      - name: 🐳 Build Docker Image
-
-        run: |
-
-
-          docker build \
-
-          -t pythoncodelife/flask-website-service:${VERSION} .
-
-
-
-
-
-
-      - name: 📤 Push Version Image
-
-        run: |
-
-
-          docker push \
-
-          pythoncodelife/flask-website-service:${VERSION}
+          echo "Release version: $VERSION"
 
 
 
@@ -315,7 +272,47 @@ jobs:
 
 
       # ------------------------------------------------------
-      # Update latest
+      # Build Docker image
+      #
+      # IMPORTANT:
+      # Keep "." at the end
+      #
+      # ------------------------------------------------------
+
+      - name: 🐳 Build Docker Image
+
+        run: |
+
+          docker build -t pythoncodelife/flask-website-service:${VERSION} .
+
+
+
+
+
+
+      # ------------------------------------------------------
+      # Push version image
+      #
+      # Example:
+      #
+      # flask-website-service:v1.0.0
+      #
+      # ------------------------------------------------------
+
+      - name: 📤 Push Version Image
+
+        run: |
+
+          docker push pythoncodelife/flask-website-service:${VERSION}
+
+
+
+
+
+
+
+      # ------------------------------------------------------
+      # Create latest tag
       #
       # latest always points to newest release
       #
@@ -325,23 +322,22 @@ jobs:
 
         run: |
 
-
           docker tag \
-
           pythoncodelife/flask-website-service:${VERSION} \
-
           pythoncodelife/flask-website-service:latest
 
 
 
 
 
+
+      # ------------------------------------------------------
+      # Push latest image
+      #
+      # ------------------------------------------------------
 
       - name: 📤 Push Latest Image
 
         run: |
 
-
-          docker push \
-
-          pythoncodelife/flask-website-service:latest
+          docker push pythoncodelife/flask-website-service:latest
