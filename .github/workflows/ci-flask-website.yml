@@ -1,0 +1,245 @@
+# ============================================================
+# 🚀 CI PIPELINE
+# Flask Website Service
+#
+# FLOW:
+#
+# Feature branch:
+#   ✅ Run tests
+#   ❌ No Docker
+#
+# Pull Request:
+#   ✅ Run tests
+#   ❌ No Docker
+#
+# Main branch:
+#   ✅ Run tests
+#   ❌ No Docker
+#
+# Release Tag:
+#   ✅ Run tests
+#   ✅ Build Docker image
+#   ✅ Push version image
+#   ✅ Push latest image
+#
+# Example:
+#
+# git tag v1.0.0
+# git push origin v1.0.0
+#
+# ============================================================
+
+
+name: 🚀 CI Flask Website Service
+
+
+
+on:
+
+
+  push:
+
+    branches:
+
+      - "**"
+
+
+    tags:
+
+      - "v*"
+
+
+
+  pull_request:
+
+
+
+  workflow_dispatch:
+
+
+
+
+jobs:
+
+
+
+# ============================================================
+# 🧪 TEST JOB
+#
+# Runs on every event
+#
+# ============================================================
+
+
+  test:
+
+
+    name: 🧪 Application Tests
+
+
+    runs-on: ubuntu-latest
+
+
+
+    steps:
+
+
+
+      - name: 📥 Checkout Code
+
+        uses: actions/checkout@v4
+
+
+
+
+      - name: 🐍 Setup Python
+
+        uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.11"
+
+
+
+
+      - name: 📦 Install Dependencies
+
+        run: |
+
+
+          python -m pip install --upgrade pip
+
+          pip install -r requirements.txt
+
+
+
+
+      - name: 🧪 Run Tests
+
+        run: |
+
+
+          pytest -v
+
+
+
+
+
+# ============================================================
+# 🐳 DOCKER RELEASE
+#
+# ONLY WHEN VERSION TAG CREATED
+#
+# ============================================================
+
+
+  docker-release:
+
+
+    name: 🐳 Docker Release
+
+
+    needs: test
+
+
+    if: startsWith(github.ref, 'refs/tags/v')
+
+
+    runs-on: ubuntu-latest
+
+
+
+    steps:
+
+
+
+      - name: 📥 Checkout Code
+
+        uses: actions/checkout@v4
+
+
+
+
+      - name: 🔐 Docker Hub Login
+
+        uses: docker/login-action@v3
+
+        with:
+
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+
+
+
+
+
+      - name: 🏷️ Extract Version
+
+        run: |
+
+
+          VERSION=${GITHUB_REF#refs/tags/}
+
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+
+
+
+
+
+      - name: 🐳 Build Docker Image
+
+        run: |
+
+
+          docker build \
+
+          -t pythoncodelife/flask-website-service:${VERSION} .
+
+
+
+
+
+
+      - name: 📤 Push Version Image
+
+        run: |
+
+
+          docker push \
+
+          pythoncodelife/flask-website-service:${VERSION}
+
+
+
+
+
+
+      - name: 🏷️ Tag Latest
+
+        run: |
+
+
+          docker tag \
+
+          pythoncodelife/flask-website-service:${VERSION} \
+
+          pythoncodelife/flask-website-service:latest
+
+
+
+
+
+
+      - name: 📤 Push Latest Image
+
+        run: |
+
+
+          docker push \
+
+          pythoncodelife/flask-website-service:latest

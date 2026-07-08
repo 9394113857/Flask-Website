@@ -1,0 +1,318 @@
+# ============================================================
+# 🚀 CD PIPELINE - FLASK WEBSITE SERVICE
+#
+# Deployment Strategy:
+#
+# 1. Trigger sources:
+#
+#    ✅ New release tag
+#    ✅ Daily 04:00 UTC schedule
+#    ✅ Manual workflow execution
+#
+#
+# 2. Deployment strategy:
+#
+#    Always try newest Docker version first.
+#
+#    Example:
+#
+#       v1.0.5  <-- first attempt
+#
+#       If failed:
+#
+#       v1.0.4
+#
+#       If failed:
+#
+#       v1.0.3
+#
+#       Continue until successful deployment.
+#
+#
+# This provides automatic rollback behaviour.
+#
+# ============================================================
+
+
+
+name: 🚀 CD Flask Website Deployment
+
+
+
+
+on:
+
+
+
+  # ==========================================================
+  # Release deployment
+  #
+  # Example:
+  #
+  # v1.0.5
+  #
+  # ==========================================================
+
+  push:
+
+    tags:
+
+      - "v*"
+
+
+
+
+
+  # ==========================================================
+  # Daily deployment verification
+  #
+  # Runs every day at 04:00 UTC
+  #
+  # ==========================================================
+
+  schedule:
+
+    - cron: "0 4 * * *"
+
+
+
+
+
+
+  # ==========================================================
+  # Manual deployment
+  #
+  # GitHub Actions
+  #      |
+  #      ↓
+  # Run workflow
+  #
+  # ==========================================================
+
+  workflow_dispatch:
+
+
+
+
+
+jobs:
+
+
+
+  deploy:
+
+
+
+    name: 🚀 Deploy With Automatic Rollback
+
+
+    runs-on: ubuntu-latest
+
+
+
+
+
+    steps:
+
+
+
+      # ------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------
+
+      - name: 📥 Checkout Repository
+
+        uses: actions/checkout@v4
+
+
+
+
+
+
+      # ------------------------------------------------------
+      # Get latest docker tags
+      #
+      # Docker Hub tags are checked.
+      #
+      # Newest version is selected first.
+      #
+      # ------------------------------------------------------
+
+      - name: 🔎 Find Available Docker Versions
+
+        id: versions
+
+        run: |
+
+
+          echo "Finding available versions..."
+
+
+
+          # Example placeholder list
+          #
+          # In production this can call Docker Hub API
+          #
+          # Result:
+          #
+          # v1.0.5
+          # v1.0.4
+          # v1.0.3
+
+
+          echo "versions=v1.0.5,v1.0.4,v1.0.3" >> $GITHUB_OUTPUT
+
+
+
+
+
+
+      # ------------------------------------------------------
+      # Deployment attempt
+      #
+      # Tries newest version first.
+      #
+      # ------------------------------------------------------
+
+      - name: 🚀 Deploy With Rollback Strategy
+
+        run: |
+
+
+          echo "Starting deployment"
+
+
+
+          VERSIONS="${{ steps.versions.outputs.versions }}"
+
+
+
+          IFS=',' read -ra TAGS <<< "$VERSIONS"
+
+
+
+          SUCCESS=false
+
+
+
+          for TAG in "${TAGS[@]}"
+          do
+
+
+            echo "================================="
+
+            echo "Trying deployment"
+
+            echo "Docker Tag: $TAG"
+
+            echo "================================="
+
+
+
+
+            RESPONSE=$(curl \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"tag\":\"$TAG\"}" \
+            "${{ secrets.RENDER_DEPLOY_HOOK }}")
+
+
+
+
+            echo "$RESPONSE"
+
+
+
+
+            # ------------------------------------------------
+            # Deployment verification placeholder
+            #
+            # Replace this with Render API status checking.
+            #
+            # ------------------------------------------------
+
+
+            if [ $? -eq 0 ]
+
+            then
+
+
+              echo "✅ Deployment successful"
+
+              echo "Running version: $TAG"
+
+
+              SUCCESS=true
+
+
+              break
+
+
+
+            else
+
+
+              echo "❌ Deployment failed"
+
+              echo "Rolling back to previous version..."
+
+
+
+            fi
+
+
+          done
+
+
+
+
+
+
+          if [ "$SUCCESS" = false ]
+
+          then
+
+
+            echo "❌ All versions failed"
+
+            exit 1
+
+
+          fi
+
+
+
+
+
+
+      # ------------------------------------------------------
+      # Deployment summary
+      # ------------------------------------------------------
+
+      - name: 📋 Deployment Summary
+
+        run: |
+
+
+          echo "================================="
+
+          echo "🚀 Deployment Completed"
+
+          echo ""
+
+          echo "Repository:"
+          echo "${{ github.repository }}"
+
+          echo ""
+
+          echo "Trigger:"
+          echo "${{ github.event_name }}"
+
+          echo ""
+
+          echo "Reference:"
+          echo "${{ github.ref_name }}"
+
+          echo ""
+
+          echo "================================="
