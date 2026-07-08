@@ -36,7 +36,7 @@ jobs:
           echo "================================"
           echo "🚀 Building Initial Image"
           echo "Image:"
-          echo "${{ secrets.DOCKERHUB_USERNAME }}/disease-prediction-service:latest"
+          echo "${{ secrets.DOCKERHUB_USERNAME }}/Flask-Website-service:latest"
           echo "Time:"
           date
           echo "================================"
@@ -48,7 +48,7 @@ jobs:
       - name: 🐳 Build Docker Image
         run: |
           docker build \
-          -t ${{ secrets.DOCKERHUB_USERNAME }}/disease-prediction-service:latest .
+          -t ${{ secrets.DOCKERHUB_USERNAME }}/Flask-Website-service:latest .
 
 
       # ==================================
@@ -57,7 +57,7 @@ jobs:
       - name: 📤 Push Docker Image
         run: |
           docker push \
-          ${{ secrets.DOCKERHUB_USERNAME }}/disease-prediction-service:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/Flask-Website-service:latest
 
 
       # ==================================
@@ -65,6 +65,6 @@ jobs:
       # ==================================
       - name: ✅ Completed
         run: |
-          echo "================================"
-          echo "✅ Docker Image Successfully Pushed"
-          echo "================================"
+          echo "============================================================="
+          echo "✅ Flask-Website-service : Docker Image Successfully Pushed"
+          echo "============================================================="
