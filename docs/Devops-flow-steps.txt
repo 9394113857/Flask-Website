@@ -1,0 +1,643 @@
+Step 1 : Docker flow:-
+First we only create the Docker Hub token and save it. 
+Don't touch Render yet.
+
+Docker Hub → Login
+Then:
+Profile icon (top right)
+        ↓
+Account Settings
+        ↓
+Security
+
+-------------------------------------------------------
+
+Step 2: Create Access Token
+Click:
+New Access Token
+
+Fill:
+Token name
+Example:
+github-actions-render
+
+Permissions
+Select:
+Read & Write
+
+because GitHub Actions needs to push images.
+
+Then:
+Generate Token
+
+---------------------------------------------------------
+
+Step 3: Copy the token immediately
+It will look like:
+dckr_pat_xxxxxxxxxxxxxxxxx
+
+Copy it.
+
+⚠️ Important:
+Docker Hub shows this token only once.
+
+Save it temporarily somewhere safe.
+
+---------------------------------------------------------
+
+Step 4: Now save it in GitHub Secrets
+Go to your GitHub repository:
+Repository
+   ↓
+Settings
+   ↓
+Secrets and variables
+   ↓
+Actions
+   ↓
+New repository secret
+Create two secrets.
+
+Secret 1
+Name:
+DOCKERHUB_USERNAME
+
+Value:
+your_dockerhub_username
+
+Example:
+pythoncodelife
+
+Secret 2
+Name:
+DOCKERHUB_TOKEN
+
+Value:
+dckr_pat_xxxxxxxxxxxxxxxxx
+(the token you copied)
+
+After this, your workflow:
+# YAML:-
+uses: docker/login-action@v3
+
+will work:
+username: ${{ secrets.DOCKERHUB_USERNAME }}
+password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+So the first milestone is:
+
+✅ Docker Hub account
+✅ Docker Personal Access Token created
+✅ GitHub secrets added
+
+After this, next step is creating the first manual Docker image push workflow.
+
+
+-----------------------------------------------------
+
+Step 5: Next step: Connect Render
+Now Render will consume this Docker image.
+Go:
+Render Dashboard
+        ↓
+New +
+        ↓
+Web Service
+
+Choose:
+Deploy an existing image
+
+NOT:
+Build and deploy from GitHub
+
+because GitHub Actions is already building the image.
+
+Render Docker Image
+Put:
+docker.io/YOUR_USERNAME/YOUR_IMAGE_NAME:latest
+
+Example:
+docker.io/pythoncodelife/flask-website:latest
+
+------------------------------------------------------------
+
+✅✅✅✅✅
+Step 6: Next step: Render deployment
+Now create the Render service using this image.
+
+Go:
+Render Dashboard
+        ↓
+New +
+        ↓
+Web Service
+
+Choose:
+Deploy an existing image
+
+Not GitHub.
+
+Docker Image URL
+Enter:
+docker.io/pythoncodelife/flask-website-service:latest
+
+Render settings
+Service Name
+
+Example:
+flask-website-service
+
+Environment
+Choose:
+Docker
+
+
+Region
+Choose nearest region.
+Ex: Singapore
+
+Instance
+For testing:
+Free
+
+------------------------------------------------------
+
+Environment Variables:-
+Before clicking deploy, add your Flask variables.
+
+Example:
+SECRET_KEY=your-secret-key
+
+If your app uses database:
+
+DATABASE_URL=your-database-url
+
+If using Sentry:
+
+SENTRY_DSN=your-sentry-dsn
+
+Do not add:
+
+PORT
+
+Render provides it automatically.
+
+
+------------------------------------------------------
+
+After deploy
+Render will pull:
+pythoncodelife/flask-website-service:latest
+
+Then it runs:
+gunicorn run:app
+
+Your Dockerfile already handles this:
+CMD ["sh", "-c", "gunicorn run:app -w 1 -b 0.0.0.0:$PORT --access-logfile - --error-logfile -"]
+
+After first Render deployment works
+Then we stop using latest for production.
+We move to:
+
+v1.0.0
+v1.0.1
+v1.1.0
+
+Flow:
+
+git tag v1.0.0
+
+        ↓
+
+CI
+
+        ↓
+
+docker build
+
+        ↓
+
+pythoncodelife/flask-website-service:v1.0.0
+
+        ↓
+
+docker push
+
+        ↓
+
+CD
+
+        ↓
+
+Render deploy hook
+
+        ↓
+
+Production
+
+For now, next action is create Render Web Service from this Docker image.
+
+------------------------------------------------------------------------
+
+Good bro 🔥. 
+Now we are moving from manual deployment to automatic CD deployment.
+The Render Deploy Hook is not something you put in Render again. 
+You already have it. 
+Now we connect it with GitHub Actions.
+
+The flow will be:
+Developer creates tag
+        |
+        |
+        ↓
+GitHub Actions CD workflow
+        |
+        |
+        ↓
+Reads RENDER_DEPLOY_HOOK secret
+        |
+        |
+        ↓
+curl POST request
+        |
+        |
+        ↓
+Render receives trigger
+        |
+        |
+        ↓
+Render pulls new Docker image
+        |
+        |
+        ↓
+Application restarts
+
+----------------------------------------------------------------------
+
+Step 7: 
+Copy Render Deploy Hook
+In Render:
+Service
+   ↓
+Settings
+   ↓
+Deploy Hook
+
+Click:
+Regenerate hook
+
+You will get something like:
+https://api.render.com/deploy/srv-xxxxxxxx?key=xxxxxxxx
+
+-----------------------------------------------------------------------
+
+Step 8: Add GitHub Secret
+Go to:
+GitHub Repository
+
+Settings
+
+Secrets and variables
+
+Actions
+
+New repository secret
+Name:
+RENDER_DEPLOY_HOOK
+
+Value:
+https://api.render.com/deploy/srv-xxxxxxxx?key=xxxxxxxx
+
+Save.
+
+Now GitHub has:
+Repository Secrets
+
+DOCKERHUB_USERNAME
+DOCKERHUB_TOKEN
+RENDER_DEPLOY_HOOK
+
+Your CD workflow does NOT store the URL directly.
+GitHub replaces it during runtime. 👍
+
+--------------------------------------------
+
+Step 9: PAT token:
+Go to GitHub:
+GitHub
+   ↓
+Click your profile picture (top right)
+   ↓
+Settings
+
+
+Open Developer Settings:-
+Inside Settings, scroll down on the left sidebar:
+Settings
+   ↓
+Developer settings
+
+Create Personal Access Token
+You will see:
+Developer settings
+
+    Personal access tokens
+          |
+          ├── Fine-grained tokens
+          └── Tokens (classic)
+
+Use:
+Personal access tokens
+        ↓
+Fine-grained tokens
+        ↓
+Generate new token
+Recommended: Fine-grained token.
+
+Token Name
+Example:
+Flask Website Release Automation
+
+Expiration
+Choose:
+No expiration
+
+Repository Access
+Choose:
+
+Repository Access
+Choose:
+9394113857 / Flask_Website
+
+Do not give access to all repositories.
+
+Permissions
+Under:
+
+Set:
+Contents
+
+Change:
+Contents
+to:
+Read and write
+
+This allows:
+
+pushing tags
+pushing commits
+reading repository
+
+Metadata
+Leave:
+Read-only
+(default)
+
+Your permissions should look like:
+Repository permissions
+
+Contents       Read and write ✅
+Metadata       Read-only     ✅
+
+Generate Token
+Click:
+GitHub shows the token only once.
+Copy it immediately.
+
+
+✅✅✅✅✅
+Store it safely
+For your local machine:
+Windows PowerShell
+setx GITHUB_TOKEN "your_token_here"
+
+Restart terminal.
+Check:
+echo $env:GITHUB_TOKEN
+
+✅✅✅✅✅
+Important ⚠️
+Never put:
+Important ⚠️
+
+Never put:
+inside your Python file.
+
+Use:
+import os
+
+TOKEN = os.environ.get("GITHUB_TOKEN")
+
+After creating the PAT, your release script can:
+create tag
+      ↓
+push tag
+      ↓
+GitHub Actions trigger
+      ↓
+Docker build
+      ↓
+Render deploy
+
+Your PAT only needs Contents: Read and write for this workflow.
+
+-------------------------------------
+
+Step 10: 
+
+Yes bro, your understanding is correct. The production flow should be:
+
+feature branch
+      |
+      ↓
+local testing
+      |
+      ↓
+push feature branch
+      |
+      ↓
+Pull Request
+      |
+      ↓
+CI runs
+      |
+      ├── install dependencies
+      ├── tests
+      └── no Docker push ❌
+
+      |
+      ↓
+PR merged into main
+      |
+      ↓
+CI runs again
+      |
+      ├── install dependencies
+      ├── tests
+      └── no Docker push ❌
+
+
+Only when:
+
+git tag v1.0.0
+git push origin v1.0.0
+
+      |
+      ↓
+
+CI Release
+
+      |
+      ├── tests
+      ├── create Docker image
+      ├── push v1.0.0 image
+      └── update latest image
+
+
+      |
+      ↓
+
+CD
+
+      |
+      └── Render Deploy Hook
+
+So:
+
+Every code change → tests ✅
+Every PR → tests ✅
+Main merge → tests ✅
+No tag → no Docker push ✅
+New tag → Docker push + Render deploy ✅
+
+-----------------------------------------------
+
+Step 11: Now your release process becomes:
+# Development
+
+git checkout -b feature/login
+
+# code changes
+
+pytest
+
+
+git add .
+
+git commit -m "add login feature"
+
+git push origin feature/login
+
+
+
+# PR merge
+
+feature/login
+       |
+       ↓
+main
+
+
+
+# Release
+
+git checkout main
+
+git pull
+
+
+git tag v1.0.0
+
+
+git push origin v1.0.0
+
+---------------
+
+Then automatically:
+v1.0.0
+ |
+ ↓
+CI
+ |
+ ├── tests
+ ├── docker build
+ ├── push v1.0.0
+ └── push latest
+
+ |
+ ↓
+
+CD
+
+ |
+ ↓
+
+Render deployment
+
+-------------------------------
+
+Step 12: CD rollback strategy:-
+New CD behaviour:
+
+Deployment Trigger
+        |
+        ↓
+Find latest available Docker tag
+        |
+        ↓
+Try deploy latest tag
+        |
+        |
+        ├── SUCCESS ✅
+        |       |
+        |       └── Finish
+        |
+        |
+        └── FAILED ❌
+                |
+                ↓
+          Decrement version
+                |
+                ↓
+          Try previous tag
+                |
+                |
+                ├── SUCCESS ✅
+                |
+                └── FAILED ❌
+                        |
+                        ↓
+                  Try older tag
+                        |
+                        ↓
+                  Continue until success
+
+Example:
+Docker Hub:
+v1.0.5  ❌ failed
+v1.0.4  ❌ failed
+v1.0.3  ✅ deployed
+v1.0.2
+v1.0.1
+
+Deployment automatically falls back to:
+v1.0.3
+
+Important note:
+
+Your Render service must be able to deploy a specific image tag. 
+If Render is permanently configured only with:
+pythoncodelife/flask-website-service:latest
+
+then rollback cannot happen from GitHub alone.
+For this strategy, change Render image source to use an environment variable:
+
+pythoncodelife/flask-website-service:${IMAGE_TAG}
+
+or update Render API/Blueprint during CD.
+
+
+
+
+ 
+
