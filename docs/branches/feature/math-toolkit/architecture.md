@@ -186,3 +186,96 @@ No service changes.
 
 This keeps feature/math-toolkit-ui focused on the UI only. Then, in the next branch, we start implementing the real functionality category by category. This matches your roadmap and keeps each pull request clean and professional. 🚀
 
+Now we're following the roadmap exactly.
+
+📍 Branch
+feature/math-toolkit-ui
+🎯 Goal
+
+Only build the Dashboard UI.
+
+No calculations.
+
+No business logic.
+
+No controller changes.
+
+No service changes.
+
+Files to Edit
+app/
+│
+├── templates/
+│      math_toolkit.html    ⭐ Main
+│
+└── static/
+       css/
+            style.css       ⭐ Optional
+Today's UI
+
+This is what we'll build.
+
++--------------------------------------------------------+
+
+                    Math Toolkit
+
+Welcome to the Math Toolkit.
+Choose a category below to get started.
+
+----------------------------------------------------------
+
+[ Basic ] [ Numbers ] [ Range ] [ Series ]
+
+[ Factors ] [ Digits ] [ Conversions ]
+
+[ Tables ] [ Statistics ] [ Miscellaneous ]
+
+----------------------------------------------------------
+
+Basic
+
+Basic arithmetic operations such as
+Addition, Subtraction, Multiplication,
+Division and more.
+
+🚧 Module under development.
+
+----------------------------------------------------------
+Why Basic is Selected?
+
+Because every dashboard needs a default tab.
+
+When the page opens:
+
+Math Toolkit
+        ↓
+Basic selected automatically
+
+Later...
+
+Click
+
+Numbers
+
+↓
+
+Content changes to
+
+Numbers
+
+Prime
+
+Even
+
+Odd
+
+Coming Soon
+
+Without changing pages.
+
+Bootstrap Structure
+
+We'll use Bootstrap's built-in Nav Pills and Tab Content.
+
+
+
