@@ -306,3 +306,62 @@ It scales much better as the project grows.
 
 I think this is a cleaner, more professional structure for the long term, and it fits very well with the feature-branch workflow you're following.
 
+Before we write code, I want to make one architecture decision because it will affect the next 10+ feature branches.
+
+❌ Option 1 (Not Recommended)
+
+Put everything inside one file:
+
+math_toolkit.html
+
+Eventually it becomes 1000+ lines long.
+
+Every future branch edits the same file.
+
+Basic
+Numbers
+Range
+Series
+Factors
+Digits
+...
+
+This is hard to maintain.
+
+✅ Option 2 (Recommended)
+
+Keep math_toolkit.html as the dashboard.
+
+Create a folder:
+
+app/
+└── templates/
+    ├── math_toolkit.html
+    └── math_toolkit/
+        ├── _basic.html
+        ├── _numbers.html
+        ├── _range.html
+        ├── _series.html
+        ├── _factors.html
+        ├── _digits.html
+        ├── _conversions.html
+        ├── _tables.html
+        ├── _statistics.html
+        └── _miscellaneous.html
+
+Then math_toolkit.html becomes the dashboard that includes those partials.
+
+Later:
+
+feature/basic-operations → edits only _basic.html
+feature/number-properties → edits only _numbers.html
+feature/range-operations → edits only _range.html
+
+No merge conflicts. No giant template.
+
+This is the approach I recommend.
+
+Because this changes the project structure, I'd rather make that decision now than rewrite it later.
+
+So let's build it this way from the start. It will make every future branch cleaner and much easier to manage. 🚀
+
