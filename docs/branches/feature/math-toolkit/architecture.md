@@ -365,3 +365,93 @@ Because this changes the project structure, I'd rather make that decision now th
 
 So let's build it this way from the start. It will make every future branch cleaner and much easier to manage. 🚀
 
+Now we're talking like software architects. 😎
+
+And yes... this is the right design.
+
+You already have:
+
+app/
+└── templates/
+    ├── math_toolkit.html
+    └── math_toolkit/
+        └── _basic.html
+
+This is exactly what I wanted. 👏
+
+Think of it like this
+math_toolkit.html
+
+is the Main Dashboard
+
+while
+
+math_toolkit/
+    _basic.html
+
+is only one module.
+
+Later we'll have
+
+math_toolkit/
+
+    _basic.html
+
+    _numbers.html
+
+    _range.html
+
+    _series.html
+
+    _factors.html
+
+    _digits.html
+
+    _conversions.html
+
+    _tables.html
+
+    _statistics.html
+
+    _miscellaneous.html
+
+Exactly like Django, Flask, enterprise MVC projects.
+
+So who calls whom?
+Browser
+     │
+     ▼
+Controller
+     │
+     ▼
+math_toolkit.html
+     │
+     ▼
+include _basic.html
+
+Later
+
+math_toolkit.html
+
+        │
+
+        ├── include _basic.html
+
+        ├── include _numbers.html
+
+        ├── include _range.html
+
+        ├── include _series.html
+
+        ├── include _factors.html
+
+        ├── include _digits.html
+
+        ├── include _conversions.html
+
+        ├── include _tables.html
+
+        ├── include _statistics.html
+
+        └── include _miscellaneous.html
+
