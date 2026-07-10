@@ -16,11 +16,19 @@
 
     <div class="card-body">
 
+        <!-- ===================================================== -->
+        <!-- Description -->
+        <!-- ===================================================== -->
+
         <p class="text-muted">
 
             Perform common mathematical calculations using simple arithmetic operations.
 
         </p>
+
+        <!-- ===================================================== -->
+        <!-- Available Operations -->
+        <!-- ===================================================== -->
 
         <div class="row">
 
@@ -28,12 +36,41 @@
 
                 <ul class="list-group mb-3">
 
-                    <li class="list-group-item">Addition</li>
-                    <li class="list-group-item">Subtraction</li>
-                    <li class="list-group-item">Multiplication</li>
-                    <li class="list-group-item">Division</li>
-                    <li class="list-group-item">Modulus</li>
-                    <li class="list-group-item">Power</li>
+                    <li class="list-group-item">
+
+                        Addition
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Subtraction
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Multiplication
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Division
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Modulus
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Power
+
+                    </li>
 
                 </ul>
 
@@ -43,12 +80,53 @@
 
                 <ul class="list-group mb-3">
 
-                    <li class="list-group-item">Square</li>
-                    <li class="list-group-item">Cube</li>
-                    <li class="list-group-item">Square Root</li>
-                    <li class="list-group-item">Cube Root</li>
-                    <li class="list-group-item">Percentage</li>
-                    <li class="list-group-item">Average</li>
+                    <li class="list-group-item">
+
+                        Square
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Cube
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Square Root
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Cube Root
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Percentage
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Average
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Maximum
+
+                    </li>
+
+                    <li class="list-group-item">
+
+                        Minimum
+
+                    </li>
 
                 </ul>
 
@@ -56,14 +134,58 @@
 
         </div>
 
-        <div class="alert alert-info">
+        <!-- ===================================================== -->
+        <!-- Current Development Status -->
+        <!-- ===================================================== -->
 
-            🚧 This module will be implemented in the
-            <strong>feature/basic-operations</strong>
-            branch.
+        <div class="alert alert-primary">
+
+            🚀 Currently Implementing :
+            <strong>Addition</strong>
 
         </div>
 
     </div>
 
 </div>
+
+<!-- ========================================================= -->
+<!-- Active Module -->
+<!-- ========================================================= -->
+
+{% include "math_toolkit/basic/_addition.html" %}
+
+<!-- ========================================================= -->
+<!-- Future Modules -->
+<!-- Uncomment one by one while developing -->
+<!-- ========================================================= -->
+
+{#
+
+{% include "math_toolkit/basic/_subtraction.html" %}
+
+{% include "math_toolkit/basic/_multiplication.html" %}
+
+{% include "math_toolkit/basic/_division.html" %}
+
+{% include "math_toolkit/basic/_modulus.html" %}
+
+{% include "math_toolkit/basic/_power.html" %}
+
+{% include "math_toolkit/basic/_square.html" %}
+
+{% include "math_toolkit/basic/_cube.html" %}
+
+{% include "math_toolkit/basic/_square_root.html" %}
+
+{% include "math_toolkit/basic/_cube_root.html" %}
+
+{% include "math_toolkit/basic/_percentage.html" %}
+
+{% include "math_toolkit/basic/_average.html" %}
+
+{% include "math_toolkit/basic/_maximum.html" %}
+
+{% include "math_toolkit/basic/_minimum.html" %}
+
+#}
