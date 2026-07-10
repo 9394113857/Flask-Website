@@ -1,0 +1,123 @@
+<!-- ========================================================= -->
+<!-- Addition -->
+<!-- ========================================================= -->
+
+<div class="card mt-4 shadow-sm">
+
+    <div class="card-header bg-success text-white">
+
+        <h5 class="mb-0">
+
+            Addition
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <form method="POST">
+
+            <!-- ============================================== -->
+            <!-- First Number -->
+            <!-- ============================================== -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    First Number
+
+                </label>
+
+                <input
+                    type="number"
+                    step="any"
+                    class="form-control"
+                    name="number1"
+                    placeholder="Enter First Number"
+                    value="{{ number1 if number1 is defined else '' }}"
+                    required>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- Second Number -->
+            <!-- ============================================== -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Second Number
+
+                </label>
+
+                <input
+                    type="number"
+                    step="any"
+                    class="form-control"
+                    name="number2"
+                    placeholder="Enter Second Number"
+                    value="{{ number2 if number2 is defined else '' }}"
+                    required>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- Submit Button -->
+            <!-- ============================================== -->
+
+            <div class="d-grid">
+
+                <button
+                    type="submit"
+                    class="btn btn-success">
+
+                    Add Numbers
+
+                </button>
+
+            </div>
+
+        </form>
+
+        <!-- ============================================== -->
+        <!-- Result -->
+        <!-- ============================================== -->
+
+        {% if result is defined and result is not none %}
+
+        <div class="alert alert-success mt-4">
+
+            <h5 class="text-center mb-0">
+
+                Result : {{ result }}
+
+            </h5>
+
+        </div>
+
+        {% endif %}
+
+        <!-- ============================================== -->
+        <!-- Error -->
+        <!-- ============================================== -->
+
+        {% if error is defined and error %}
+
+        <div class="alert alert-danger mt-4">
+
+            <h5 class="text-center mb-0">
+
+                {{ error }}
+
+            </h5>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
