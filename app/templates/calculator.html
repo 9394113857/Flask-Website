@@ -28,9 +28,7 @@ Calculator
                     <div class="mb-3">
 
                         <label class="form-label">
-
                             First Number
-
                         </label>
 
                         <input
@@ -49,9 +47,7 @@ Calculator
                     <div class="mb-3">
 
                         <label class="form-label">
-
                             Second Number
-
                         </label>
 
                         <input
@@ -70,29 +66,35 @@ Calculator
                     <div class="mb-3">
 
                         <label class="form-label">
-
                             Select Operation
-
                         </label>
 
                         <select
                             class="form-select"
                             name="operation">
 
-                            <option value="+">Addition (+)</option>
+                            <option value="+">
+                                Addition (+)
+                            </option>
 
-                            <option value="-">Subtraction (-)</option>
+                            <option value="-">
+                                Subtraction (-)
+                            </option>
 
-                            <option value="*">Multiplication (*)</option>
+                            <option value="*">
+                                Multiplication (*)
+                            </option>
 
-                            <option value="/">Division (/)</option>
+                            <option value="/">
+                                Division (/)
+                            </option>
 
                         </select>
 
                     </div>
 
 
-                    <!-- Button -->
+                    <!-- Calculate Button -->
 
                     <div class="d-grid">
 
@@ -141,6 +143,22 @@ Calculator
                 </div>
 
                 {% endif %}
+
+
+                <!-- Back Button -->
+
+                <div class="d-grid mt-3">
+
+                    <button
+                        onclick="history.back()"
+                        class="btn btn-secondary">
+
+                        ← Back
+
+                    </button>
+
+                </div>
+
 
             </div>
 

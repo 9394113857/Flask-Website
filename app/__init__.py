@@ -71,7 +71,8 @@ def create_app():
 
         # Browser response
         if "text/html" in request.headers.get("Accept", ""):
-            return f"""
+            return (
+                f"""
             <html>
             <head>
                 <title>🚀 Flask Website Service</title>
@@ -104,6 +105,23 @@ def create_app():
                     .label {{
                         color: #94a3b8;
                     }}
+                    
+                    .back-btn {{ 
+                        display: inline-block;
+                        margin-top: 20px;
+                        padding: 10px 22px;
+                        background: #0d6efd;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: bold;
+                        transition: background 0.3s ease;
+                    }}
+
+                    .back-btn:hover {{
+                        background: #0b5ed7;
+                        color: white;
+                    }}
                 </style>
 
             </head>
@@ -126,12 +144,25 @@ def create_app():
 
                     <p><span class="label">IST:</span> {build["build_time_ist"]}</p>
 
+
+                    <!-- Back Button -->
+
+                    <a
+                        href="/"
+                        class="back-btn">
+
+                        ← Back to Home
+
+                    </a>
+
                 </div>
 
             </body>
 
             </html>
-            """, 200
+            """,
+                200,
+            )
 
         # API response
         return (
