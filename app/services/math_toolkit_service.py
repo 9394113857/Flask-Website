@@ -19,5 +19,5 @@ class MathToolkitService:
                 "This section will contain various mathematical tools "
                 "and utilities."
             ),
-            "status": "Coming Soon"
+            "status": "Basic Operations"
         }

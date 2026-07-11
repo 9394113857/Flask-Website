@@ -1,12 +1,19 @@
 {% extends "base.html" %}
 
+
 {% block title %}
+
 Math Toolkit
+
 {% endblock %}
+
+
 
 {% block content %}
 
+
 <div class="container">
+
 
     <!-- ========================================================= -->
     <!-- Page Header -->
@@ -14,11 +21,13 @@ Math Toolkit
 
     <div class="text-center mb-5">
 
+
         <h1 class="fw-bold">
 
             {{ page_data.title }}
 
         </h1>
+
 
         <p class="lead text-muted">
 
@@ -26,24 +35,32 @@ Math Toolkit
 
         </p>
 
+
     </div>
+
+
 
     <!-- ========================================================= -->
     <!-- Bootstrap Navigation Pills -->
     <!-- ========================================================= -->
+
 
     <ul
         class="nav nav-pills justify-content-center mb-4"
         id="mathToolkitTabs"
         role="tablist">
 
+
+
         <!-- ===================================================== -->
         <!-- Basic -->
         <!-- ===================================================== -->
 
+
         <li
             class="nav-item mx-2"
             role="presentation">
+
 
             <button
                 class="nav-link active"
@@ -53,19 +70,27 @@ Math Toolkit
                 type="button"
                 role="tab">
 
+
                 Basic
+
 
             </button>
 
+
         </li>
+
+
+
 
         <!-- ===================================================== -->
         <!-- Numbers -->
         <!-- ===================================================== -->
 
+
         <li
             class="nav-item mx-2"
             role="presentation">
+
 
             <button
                 class="nav-link"
@@ -75,19 +100,27 @@ Math Toolkit
                 type="button"
                 role="tab">
 
+
                 Numbers
+
 
             </button>
 
+
         </li>
+
+
+
 
         <!-- ===================================================== -->
         <!-- Range -->
         <!-- ===================================================== -->
 
+
         <li
             class="nav-item mx-2"
             role="presentation">
+
 
             <button
                 class="nav-link"
@@ -97,61 +130,94 @@ Math Toolkit
                 type="button"
                 role="tab">
 
+
                 Range
+
 
             </button>
 
+
         </li>
 
+
     </ul>
+
+
+
+
 
     <!-- ========================================================= -->
     <!-- Tab Content -->
     <!-- ========================================================= -->
 
+
     <div class="tab-content">
+
+
 
         <!-- ===================================================== -->
         <!-- Basic -->
         <!-- ===================================================== -->
+
 
         <div
             class="tab-pane fade show active"
             id="basic"
             role="tabpanel">
 
+
             {% include "math_toolkit/_basic.html" %}
 
+
         </div>
+
+
+
+
 
         <!-- ===================================================== -->
         <!-- Numbers -->
         <!-- ===================================================== -->
+
 
         <div
             class="tab-pane fade"
             id="numbers"
             role="tabpanel">
 
+
             {% include "math_toolkit/_numbers.html" %}
 
+
         </div>
+
+
+
+
 
         <!-- ===================================================== -->
         <!-- Range -->
         <!-- ===================================================== -->
+
 
         <div
             class="tab-pane fade"
             id="range"
             role="tabpanel">
 
+
             {% include "math_toolkit/_range.html" %}
+
 
         </div>
 
+
+
     </div>
 
+
+
 </div>
+
 
 {% endblock %}
