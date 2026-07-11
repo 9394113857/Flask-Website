@@ -38,6 +38,7 @@ name: 🚀 CD Flask Website Deployment
 
 
 
+
 # ============================================================
 # EVENTS
 # ============================================================
@@ -48,6 +49,14 @@ on:
 
   # ----------------------------------------------------------
   # Triggered only by successful CI
+  #
+  # CI completes:
+  #
+  #       Docker build
+  #       Docker push
+  #
+  # Then CD starts.
+  #
   # ----------------------------------------------------------
 
   repository_dispatch:
@@ -62,8 +71,12 @@ on:
 
 
 
+
   # ----------------------------------------------------------
   # Daily deployment verification
+  #
+  # Runs every day at 04:00 UTC
+  #
   # ----------------------------------------------------------
 
   schedule:
@@ -75,8 +88,15 @@ on:
 
 
 
+
   # ----------------------------------------------------------
   # Manual deployment
+  #
+  # GitHub Actions
+  #       |
+  #       ↓
+  # Run workflow
+  #
   # ----------------------------------------------------------
 
   workflow_dispatch:
@@ -87,19 +107,30 @@ on:
 
 
 
+
+# ============================================================
+# JOBS
+# ============================================================
+
+
 jobs:
 
+
+
+
+  # ==========================================================
+  # 🚀 DEPLOY JOB
+  # ==========================================================
 
 
   deploy:
 
 
-
     name: 🚀 Deploy With Automatic Rollback
 
 
-
     runs-on: ubuntu-latest
+
 
 
 
@@ -110,8 +141,9 @@ jobs:
 
 
 
+
       # ------------------------------------------------------
-      # Checkout
+      # Checkout repository
       # ------------------------------------------------------
 
       - name: 📥 Checkout Repository
@@ -126,7 +158,12 @@ jobs:
 
 
       # ------------------------------------------------------
-      # Get version from CI
+      # Get version from CI payload
+      #
+      # Example:
+      #
+      # v1.0.15
+      #
       # ------------------------------------------------------
 
       - name: 🏷️ Get Deployment Version
@@ -144,9 +181,9 @@ jobs:
 
 
       # ------------------------------------------------------
-      # Wait before deployment
+      # Deployment safety hold
       #
-      # Extra safety delay
+      # Gives time before production deployment.
       #
       # ------------------------------------------------------
 
@@ -158,6 +195,7 @@ jobs:
 
           echo "Holding deployment before production..."
 
+
           sleep 120
 
 
@@ -167,7 +205,12 @@ jobs:
 
 
       # ------------------------------------------------------
-      # Deploy
+      # Deploy Application
+      #
+      # Calls Render deployment webhook.
+      #
+      # Sends Docker version tag.
+      #
       # ------------------------------------------------------
 
       - name: 🚀 Deploy Application
@@ -179,16 +222,11 @@ jobs:
           echo "Deploying version: ${VERSION}"
 
 
-
-          curl \
-
-          -X POST \
-
+          curl -X POST \
           -H "Content-Type: application/json" \
-
           -d "{\"tag\":\"${VERSION}\"}" \
-
           "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
 
 
 
@@ -212,22 +250,29 @@ jobs:
 
           echo ""
 
+
           echo "Repository:"
 
           echo "${{ github.repository }}"
 
+
           echo ""
+
 
           echo "Version:"
 
           echo "${VERSION}"
 
+
           echo ""
+
 
           echo "Trigger:"
 
           echo "${{ github.event_name }}"
 
+
           echo ""
+
 
           echo "================================="
