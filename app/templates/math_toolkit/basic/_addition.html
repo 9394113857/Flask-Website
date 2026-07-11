@@ -30,14 +30,8 @@
 
                 </label>
 
-                <input
-                    type="number"
-                    step="any"
-                    class="form-control"
-                    name="number1"
-                    placeholder="Enter First Number"
-                    value="{{ number1 if number1 is defined else '' }}"
-                    required>
+                <input type="number" step="any" class="form-control" name="number1" placeholder="Enter First Number"
+                    value="{{ number1 if number1 is defined else '' }}" required>
 
             </div>
 
@@ -53,14 +47,8 @@
 
                 </label>
 
-                <input
-                    type="number"
-                    step="any"
-                    class="form-control"
-                    name="number2"
-                    placeholder="Enter Second Number"
-                    value="{{ number2 if number2 is defined else '' }}"
-                    required>
+                <input type="number" step="any" class="form-control" name="number2" placeholder="Enter Second Number"
+                    value="{{ number2 if number2 is defined else '' }}" required>
 
             </div>
 
@@ -70,13 +58,11 @@
 
             <div class="d-grid">
 
-                <button
-                    type="submit"
-                    class="btn btn-success">
+                <<button type="submit" name="operation" value="add" class="btn btn-success">
 
                     Add Numbers
 
-                </button>
+                    </button>
 
             </div>
 
@@ -86,13 +72,13 @@
         <!-- Result -->
         <!-- ============================================== -->
 
-        {% if result is defined and result is not none %}
+        {% if addition_result is not none %}
 
         <div class="alert alert-success mt-4">
 
             <h5 class="text-center mb-0">
 
-                Result : {{ result }}
+                Result : {{ addition_result }}
 
             </h5>
 
