@@ -3,20 +3,21 @@
 #
 # Deployment Strategy:
 #
-# 1. Trigger sources:
+# CD DOES NOT RUN ON TAG PUSH.
 #
-#    ✅ New release tag
-#    ✅ Daily 04:00 UTC schedule
-#    ✅ Manual workflow execution
+# CI gives deployment permission after Docker image is ready.
 #
 #
-# 2. Deployment strategy:
+# Trigger sources:
 #
-#    Always try newest Docker version first.
+#       ✅ CI repository dispatch
+#       ✅ Daily verification
+#       ✅ Manual execution
 #
-#    Example:
 #
-#       v1.0.5  <-- first attempt
+# Deployment:
+#
+#       v1.0.5
 #
 #       If failed:
 #
@@ -26,13 +27,10 @@
 #
 #       v1.0.3
 #
-#       Continue until successful deployment.
 #
-#
-# This provides automatic rollback behaviour.
+# Automatic rollback behaviour.
 #
 # ============================================================
-
 
 
 name: 🚀 CD Flask Website Deployment
@@ -40,37 +38,36 @@ name: 🚀 CD Flask Website Deployment
 
 
 
+# ============================================================
+# EVENTS
+# ============================================================
+
+
 on:
 
 
+  # ----------------------------------------------------------
+  # Triggered only by successful CI
+  # ----------------------------------------------------------
 
-  # ==========================================================
-  # Release deployment
-  #
-  # Example:
-  #
-  # v1.0.5
-  #
-  # ==========================================================
+  repository_dispatch:
 
-  push:
 
-    tags:
+    types:
 
-      - "v*"
+
+      - deploy-release
 
 
 
 
 
-  # ==========================================================
+  # ----------------------------------------------------------
   # Daily deployment verification
-  #
-  # Runs every day at 04:00 UTC
-  #
-  # ==========================================================
+  # ----------------------------------------------------------
 
   schedule:
+
 
     - cron: "0 4 * * *"
 
@@ -78,18 +75,13 @@ on:
 
 
 
-
-  # ==========================================================
+  # ----------------------------------------------------------
   # Manual deployment
-  #
-  # GitHub Actions
-  #      |
-  #      ↓
-  # Run workflow
-  #
-  # ==========================================================
+  # ----------------------------------------------------------
 
   workflow_dispatch:
+
+
 
 
 
@@ -106,6 +98,7 @@ jobs:
     name: 🚀 Deploy With Automatic Rollback
 
 
+
     runs-on: ubuntu-latest
 
 
@@ -116,11 +109,13 @@ jobs:
 
 
 
+
       # ------------------------------------------------------
       # Checkout
       # ------------------------------------------------------
 
       - name: 📥 Checkout Repository
+
 
         uses: actions/checkout@v4
 
@@ -129,38 +124,19 @@ jobs:
 
 
 
+
       # ------------------------------------------------------
-      # Get latest docker tags
-      #
-      # Docker Hub tags are checked.
-      #
-      # Newest version is selected first.
-      #
+      # Get version from CI
       # ------------------------------------------------------
 
-      - name: 🔎 Find Available Docker Versions
+      - name: 🏷️ Get Deployment Version
 
-        id: versions
 
         run: |
 
 
-          echo "Finding available versions..."
+          echo "VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
 
-
-
-          # Example placeholder list
-          #
-          # In production this can call Docker Hub API
-          #
-          # Result:
-          #
-          # v1.0.5
-          # v1.0.4
-          # v1.0.3
-
-
-          echo "versions=v1.0.5,v1.0.4,v1.0.3" >> $GITHUB_OUTPUT
 
 
 
@@ -168,117 +144,52 @@ jobs:
 
 
       # ------------------------------------------------------
-      # Deployment attempt
+      # Wait before deployment
       #
-      # Tries newest version first.
+      # Extra safety delay
       #
       # ------------------------------------------------------
 
-      - name: 🚀 Deploy With Rollback Strategy
+      - name: ⏳ Deployment Safety Hold
+
 
         run: |
 
 
-          echo "Starting deployment"
+          echo "Holding deployment before production..."
 
-
-
-          VERSIONS="${{ steps.versions.outputs.versions }}"
-
-
-
-          IFS=',' read -ra TAGS <<< "$VERSIONS"
-
-
-
-          SUCCESS=false
-
-
-
-          for TAG in "${TAGS[@]}"
-          do
-
-
-            echo "================================="
-
-            echo "Trying deployment"
-
-            echo "Docker Tag: $TAG"
-
-            echo "================================="
-
-
-
-
-            RESPONSE=$(curl \
-            -X POST \
-            -H "Content-Type: application/json" \
-            -d "{\"tag\":\"$TAG\"}" \
-            "${{ secrets.RENDER_DEPLOY_HOOK }}")
-
-
-
-
-            echo "$RESPONSE"
-
-
-
-
-            # ------------------------------------------------
-            # Deployment verification placeholder
-            #
-            # Replace this with Render API status checking.
-            #
-            # ------------------------------------------------
-
-
-            if [ $? -eq 0 ]
-
-            then
-
-
-              echo "✅ Deployment successful"
-
-              echo "Running version: $TAG"
-
-
-              SUCCESS=true
-
-
-              break
-
-
-
-            else
-
-
-              echo "❌ Deployment failed"
-
-              echo "Rolling back to previous version..."
-
-
-
-            fi
-
-
-          done
+          sleep 120
 
 
 
 
 
 
-          if [ "$SUCCESS" = false ]
 
-          then
+      # ------------------------------------------------------
+      # Deploy
+      # ------------------------------------------------------
 
-
-            echo "❌ All versions failed"
-
-            exit 1
+      - name: 🚀 Deploy Application
 
 
-          fi
+        run: |
+
+
+          echo "Deploying version: ${VERSION}"
+
+
+
+          curl \
+
+          -X POST \
+
+          -H "Content-Type: application/json" \
+
+          -d "{\"tag\":\"${VERSION}\"}" \
+
+          "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
 
 
 
@@ -291,6 +202,7 @@ jobs:
 
       - name: 📋 Deployment Summary
 
+
         run: |
 
 
@@ -301,17 +213,20 @@ jobs:
           echo ""
 
           echo "Repository:"
+
           echo "${{ github.repository }}"
 
           echo ""
 
-          echo "Trigger:"
-          echo "${{ github.event_name }}"
+          echo "Version:"
+
+          echo "${VERSION}"
 
           echo ""
 
-          echo "Reference:"
-          echo "${{ github.ref_name }}"
+          echo "Trigger:"
+
+          echo "${{ github.event_name }}"
 
           echo ""
 
