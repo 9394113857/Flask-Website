@@ -26,7 +26,7 @@
 #
 # Docker push NEVER happens on normal commits.
 #
-# CD starts only after CI finishes successfully.
+# CD starts ONLY after CI completes successfully.
 #
 # ============================================================
 
@@ -42,20 +42,26 @@ name: 🚀 CI Flask Website Service
 
 on:
 
+
   push:
 
+
     branches:
+
 
       - "**"
 
 
     tags:
 
+
       - "v*"
 
 
 
+
   pull_request:
+
 
 
 
@@ -93,10 +99,6 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Checkout code
-      # ------------------------------------------------------
-
       - name: 📥 Checkout Repository
 
         uses: actions/checkout@v4
@@ -111,10 +113,6 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Python setup
-      # ------------------------------------------------------
-
       - name: 🐍 Setup Python
 
         uses: actions/setup-python@v5
@@ -127,17 +125,16 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Install dependencies
-      # ------------------------------------------------------
-
       - name: 📦 Install Dependencies
 
         run: |
 
+
           python -m pip install --upgrade pip
 
+
           pip install -r requirements.txt
+
 
           pip install pytest
 
@@ -145,13 +142,10 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Debug project structure
-      # ------------------------------------------------------
-
       - name: 🔍 Show Project Structure
 
         run: |
+
 
           pwd
 
@@ -163,10 +157,6 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Run Flask tests
-      # ------------------------------------------------------
-
       - name: 🧪 Run Tests
 
         env:
@@ -174,6 +164,7 @@ jobs:
           PYTHONPATH: .
 
         run: |
+
 
           pytest -v
 
@@ -210,11 +201,6 @@ jobs:
 
 
 
-
-      # ------------------------------------------------------
-      # Checkout
-      # ------------------------------------------------------
-
       - name: 📥 Checkout Repository
 
         uses: actions/checkout@v4
@@ -228,10 +214,6 @@ jobs:
 
 
 
-
-      # ------------------------------------------------------
-      # Docker Hub login
-      # ------------------------------------------------------
 
       - name: 🔐 Docker Hub Login
 
@@ -249,21 +231,22 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Build metadata
-      # ------------------------------------------------------
-
       - name: 🏷️ Set Build Metadata
 
         run: |
 
+
           echo "COMMIT=${GITHUB_SHA}" >> $GITHUB_ENV
+
 
           echo "BRANCH=main" >> $GITHUB_ENV
 
+
           echo "BUILD_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
+
           echo "BUILD_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV
+
 
           echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
 
@@ -271,22 +254,26 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Generate build_info.json
-      # ------------------------------------------------------
 
       - name: 📄 Generate Build Info
 
         run: |
 
+
           cat > build_info.json << EOF
 
           {
+
             "version": "${VERSION}",
+
             "commit": "${COMMIT}",
+
             "branch": "${BRANCH}",
+
             "build_time_utc": "${BUILD_TIME_UTC}",
+
             "build_time_ist": "${BUILD_TIME_IST}"
+
           }
 
           EOF
@@ -295,28 +282,24 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Build Docker image
-      # ------------------------------------------------------
 
       - name: 🐳 Build Docker Image
 
         run: |
 
-          docker build \
-          -t pythoncodelife/flask-website-service:${VERSION} .
+
+          docker build -t pythoncodelife/flask-website-service:${VERSION} .
 
 
 
 
 
-      # ------------------------------------------------------
-      # Push version image
-      # ------------------------------------------------------
+
 
       - name: 📤 Push Version Image
 
         run: |
+
 
           docker push pythoncodelife/flask-website-service:${VERSION}
 
@@ -324,20 +307,12 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Create latest tag
-      #
-      # FIX:
-      # docker tag must receive exactly:
-      #
-      # SOURCE IMAGE
-      # TARGET IMAGE
-      #
-      # ------------------------------------------------------
+
 
       - name: 🏷️ Create Latest Tag
 
         run: |
+
 
           docker tag pythoncodelife/flask-website-service:${VERSION} pythoncodelife/flask-website-service:latest
 
@@ -345,13 +320,12 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Push latest image
-      # ------------------------------------------------------
+
 
       - name: 📤 Push Latest Image
 
         run: |
+
 
           docker push pythoncodelife/flask-website-service:latest
 
@@ -359,13 +333,19 @@ jobs:
 
 
 
+
+
       # ------------------------------------------------------
-      # Registry synchronization wait
+      # Docker registry sync wait
+      #
+      # Wait before allowing CD.
+      #
       # ------------------------------------------------------
 
       - name: ⏳ Wait For Docker Registry Sync
 
         run: |
+
 
           echo "Waiting for Docker registry synchronization..."
 
@@ -375,14 +355,15 @@ jobs:
 
 
 
+
+
       # ------------------------------------------------------
-      # Trigger CD deployment
+      # Trigger CD
       #
-      # CD starts only after:
+      # IMPORTANT:
       #
-      # Tests passed
-      # Docker image built
-      # Images pushed
+      # Uses personal token because GITHUB_TOKEN
+      # cannot trigger repository_dispatch.
       #
       # ------------------------------------------------------
 
@@ -392,14 +373,21 @@ jobs:
 
         with:
 
-          token: ${{ secrets.GITHUB_TOKEN }}
+
+          token: ${{ secrets.CD_TRIGGER_TOKEN }}
+
 
           repository: ${{ github.repository }}
 
+
           event-type: deploy-release
+
 
           client-payload: |
 
+
             {
+
               "version": "${{ env.VERSION }}"
+
             }
