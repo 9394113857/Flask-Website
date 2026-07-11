@@ -1,7 +1,7 @@
 """
 math_toolkit_service.py
 
-Purpose
+Purpose  
 -------
 Contains business logic for the Math Toolkit page.
 """
