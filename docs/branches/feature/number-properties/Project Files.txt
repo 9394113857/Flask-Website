@@ -1,0 +1,19 @@
+app/
+│
+├── controllers/
+│      number_properties_controller.py
+│
+├── services/
+│      number_properties_service.py
+│
+├── templates/
+│      math_toolkit/
+│             _numbers.html
+│
+├── static/
+│      css/
+│           style.css        (if needed)
+│
+├── __init__.py             (register blueprint if required)
+│
+└── routes...
