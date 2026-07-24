@@ -1,0 +1,66 @@
+<!-- ========================================================= -->
+<!-- Even Number -->
+<!-- ========================================================= -->
+
+<div class="mb-4">
+
+    <h5>
+
+        Even Number
+
+    </h5>
+
+    <form method="POST">
+
+        <div class="row">
+
+            <div class="col-md-6">
+
+                <label
+                    for="even_number"
+                    class="form-label">
+
+                    Enter Number
+
+                </label>
+
+                <input
+                    type="number"
+                    class="form-control"
+                    id="even_number"
+                    name="number"
+                    placeholder="Enter Number"
+                    required>
+
+            </div>
+
+        </div>
+
+        <input
+            type="hidden"
+            name="operation"
+            value="even">
+
+        <button
+            type="submit"
+            class="btn btn-success mt-3">
+
+            Check Even Number
+
+        </button>
+
+    </form>
+
+    {% if operation == "even" and result %}
+
+    <div class="alert alert-success mt-3">
+
+        <strong>Result :</strong>
+
+        {{ result.message }}
+
+    </div>
+
+    {% endif %}
+
+</div>
