@@ -1,7 +1,7 @@
 # ============================================================
 # 🚀 CI PIPELINE - FLASK WEBSITE SERVICE
 #
-# Workflow:
+# Workflow: 
 #
 # Normal push:
 #       ✅ Install dependencies
