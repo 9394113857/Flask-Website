@@ -21,6 +21,7 @@
 #       ✅ Build Docker image
 #       ✅ Push version image
 #       ✅ Push latest image
+#       ✅ Send CI email notification
 #       ✅ Wait for registry sync
 #       ✅ Trigger CD deployment
 #
@@ -42,26 +43,20 @@ name: 🚀 CI Flask Website Service
 
 on:
 
-
   push:
 
-
     branches:
-
 
       - "**"
 
 
     tags:
 
-
       - "v*"
 
 
 
-
   pull_request:
-
 
 
 
@@ -129,12 +124,9 @@ jobs:
 
         run: |
 
-
           python -m pip install --upgrade pip
 
-
           pip install -r requirements.txt
-
 
           pip install pytest
 
@@ -145,7 +137,6 @@ jobs:
       - name: 🔍 Show Project Structure
 
         run: |
-
 
           pwd
 
@@ -165,8 +156,10 @@ jobs:
 
         run: |
 
-
           pytest -v
+
+
+
 
 
 
@@ -231,6 +224,17 @@ jobs:
 
 
 
+      # ======================================================
+      # 🏷️ BUILD METADATA
+      #
+      # Used for:
+      #
+      #       CI Email
+      #       CD Payload
+      #
+      # ======================================================
+
+
       - name: 🏷️ Set Build Metadata
 
         run: |
@@ -239,7 +243,7 @@ jobs:
           echo "COMMIT=${GITHUB_SHA}" >> $GITHUB_ENV
 
 
-          echo "BRANCH=main" >> $GITHUB_ENV
+          echo "BRANCH=${GITHUB_REF_NAME}" >> $GITHUB_ENV
 
 
           echo "BUILD_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
@@ -249,7 +253,6 @@ jobs:
 
 
           echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
-
 
 
 
@@ -283,12 +286,19 @@ jobs:
 
 
 
+
+      # ======================================================
+      # 🐳 DOCKER BUILD
+      # ======================================================
+
+
       - name: 🐳 Build Docker Image
 
         run: |
 
 
-          docker build -t pythoncodelife/flask-website-service:${VERSION} .
+          docker build \
+          -t pythoncodelife/flask-website-service:${VERSION} .
 
 
 
@@ -309,12 +319,15 @@ jobs:
 
 
 
+
       - name: 🏷️ Create Latest Tag
 
         run: |
 
 
-          docker tag pythoncodelife/flask-website-service:${VERSION} pythoncodelife/flask-website-service:latest
+          docker tag \
+          pythoncodelife/flask-website-service:${VERSION} \
+          pythoncodelife/flask-website-service:latest
 
 
 
@@ -335,12 +348,114 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Docker registry sync wait
+      # ======================================================
+      # 📧 CI SUCCESS EMAIL
       #
-      # Wait before allowing CD.
+      # Sent after Docker images are successfully pushed.
       #
-      # ------------------------------------------------------
+      # ======================================================
+
+
+      - name: 📧 Send CI Success Email
+
+        uses: dawidd6/action-send-mail@v3
+
+        with:
+
+
+          server_address: ${{ secrets.SMTP_SERVER }}
+
+
+          server_port: ${{ secrets.SMTP_PORT }}
+
+
+          username: ${{ secrets.SMTP_USERNAME }}
+
+
+          password: ${{ secrets.SMTP_PASSWORD }}
+
+
+          subject: |
+            ✅ CI Completed - Flask Website Service ${{ env.VERSION }}
+
+
+          to: ${{ secrets.EMAIL_TO }}
+
+
+          from: ${{ secrets.SMTP_USERNAME }}
+
+
+          body: |
+
+            CI Pipeline Completed Successfully
+
+            =================================
+
+
+            Repository:
+
+            ${{ github.repository }}
+
+
+            Version:
+
+            ${{ env.VERSION }}
+
+
+            Branch:
+
+            ${{ env.BRANCH }}
+
+
+            Commit SHA:
+
+            ${{ env.COMMIT }}
+
+
+            Docker Image:
+
+            pythoncodelife/flask-website-service:${{ env.VERSION }}
+
+
+            Latest Image:
+
+            pythoncodelife/flask-website-service:latest
+
+
+            Build Time UTC:
+
+            ${{ env.BUILD_TIME_UTC }}
+
+
+            Build Time IST:
+
+            ${{ env.BUILD_TIME_IST }}
+
+
+            Workflow:
+
+            CI Flask Website Service
+
+
+            Status:
+
+            SUCCESS
+
+
+            Next Step:
+
+            CD deployment will start automatically.
+
+
+
+
+
+
+
+      # ======================================================
+      # Docker Registry Sync Wait
+      # ======================================================
+
 
       - name: ⏳ Wait For Docker Registry Sync
 
@@ -348,6 +463,7 @@ jobs:
 
 
           echo "Waiting for Docker registry synchronization..."
+
 
           sleep 120
 
@@ -357,19 +473,18 @@ jobs:
 
 
 
-      # ------------------------------------------------------
-      # Trigger CD
+      # ======================================================
+      # 🚀 TRIGGER CD
       #
-      # IMPORTANT:
+      # Sends complete release information.
       #
-      # Uses personal token because GITHUB_TOKEN
-      # cannot trigger repository_dispatch.
-      #
-      # ------------------------------------------------------
+      # ======================================================
+
 
       - name: 🚀 Trigger CD Deployment
 
         uses: peter-evans/repository-dispatch@v3
+
 
         with:
 
@@ -388,6 +503,14 @@ jobs:
 
             {
 
-              "version": "${{ env.VERSION }}"
+              "version": "${{ env.VERSION }}",
+
+              "commit": "${{ env.COMMIT }}",
+
+              "branch": "${{ env.BRANCH }}",
+
+              "build_time_utc": "${{ env.BUILD_TIME_UTC }}",
+
+              "build_time_ist": "${{ env.BUILD_TIME_IST }}"
 
             }
