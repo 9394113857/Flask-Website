@@ -19,16 +19,14 @@
 #
 #       v1.0.5
 #
-#       If failed:
+#       Includes:
 #
-#       v1.0.4
+#       ✅ Version
+#       ✅ Commit SHA
+#       ✅ Branch
+#       ✅ Build Information
+#       ✅ Deployment Notification
 #
-#       If failed:
-#
-#       v1.0.3
-#
-#
-# Automatic rollback behaviour.
 #
 # ============================================================
 
@@ -59,6 +57,7 @@ on:
   #
   # ----------------------------------------------------------
 
+
   repository_dispatch:
 
 
@@ -79,6 +78,7 @@ on:
   #
   # ----------------------------------------------------------
 
+
   schedule:
 
 
@@ -92,14 +92,11 @@ on:
   # ----------------------------------------------------------
   # Manual deployment
   #
-  # GitHub Actions
-  #       |
-  #       ↓
-  # Run workflow
-  #
   # ----------------------------------------------------------
 
+
   workflow_dispatch:
+
 
 
 
@@ -126,11 +123,10 @@ jobs:
   deploy:
 
 
-    name: 🚀 Deploy With Automatic Rollback
+    name: 🚀 Deploy With Notification
 
 
     runs-on: ubuntu-latest
-
 
 
 
@@ -146,6 +142,7 @@ jobs:
       # Checkout repository
       # ------------------------------------------------------
 
+
       - name: 📥 Checkout Repository
 
 
@@ -158,21 +155,54 @@ jobs:
 
 
       # ------------------------------------------------------
-      # Get version from CI payload
+      # Receive CI Metadata
       #
-      # Example:
-      #
-      # v1.0.15
+      # Comes from repository_dispatch payload
       #
       # ------------------------------------------------------
 
-      - name: 🏷️ Get Deployment Version
+
+      - name: 🏷️ Get Deployment Metadata
 
 
         run: |
 
 
           echo "VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
+
+
+          echo "COMMIT=${{ github.event.client_payload.commit }}" >> $GITHUB_ENV
+
+
+          echo "BRANCH=${{ github.event.client_payload.branch }}" >> $GITHUB_ENV
+
+
+          echo "BUILD_TIME_UTC=${{ github.event.client_payload.build_time_utc }}" >> $GITHUB_ENV
+
+
+          echo "BUILD_TIME_IST=${{ github.event.client_payload.build_time_ist }}" >> $GITHUB_ENV
+
+
+
+
+
+
+
+      # ------------------------------------------------------
+      # Deployment Time
+      # ------------------------------------------------------
+
+
+      - name: ⏱️ Set Deployment Time
+
+
+        run: |
+
+
+          echo "DEPLOY_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+
+
+          echo "DEPLOY_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV
 
 
 
@@ -186,6 +216,7 @@ jobs:
       # Gives time before production deployment.
       #
       # ------------------------------------------------------
+
 
       - name: ⏳ Deployment Safety Hold
 
@@ -213,6 +244,7 @@ jobs:
       #
       # ------------------------------------------------------
 
+
       - name: 🚀 Deploy Application
 
 
@@ -234,9 +266,137 @@ jobs:
 
 
 
+
       # ------------------------------------------------------
-      # Deployment summary
+      # Deployment Email Notification
+      #
+      # Sent after successful Render deployment trigger.
+      #
       # ------------------------------------------------------
+
+
+      - name: 📧 Send Deployment Success Email
+
+
+        uses: dawidd6/action-send-mail@v3
+
+
+        with:
+
+
+          server_address: ${{ secrets.SMTP_SERVER }}
+
+
+          server_port: ${{ secrets.SMTP_PORT }}
+
+
+          username: ${{ secrets.SMTP_USERNAME }}
+
+
+          password: ${{ secrets.SMTP_PASSWORD }}
+
+
+          subject: |
+
+            🚀 Deployment Successful - Flask Website Service ${{ env.VERSION }}
+
+
+          to: ${{ secrets.EMAIL_TO }}
+
+
+          from: ${{ secrets.SMTP_USERNAME }}
+
+
+          body: |
+
+
+            Production Deployment Completed Successfully
+
+
+            ========================================
+
+
+            Repository:
+
+            ${{ github.repository }}
+
+
+
+            Version:
+
+            ${{ env.VERSION }}
+
+
+
+            Branch:
+
+            ${{ env.BRANCH }}
+
+
+
+            Commit SHA:
+
+            ${{ env.COMMIT }}
+
+
+
+            Docker Image:
+
+            pythoncodelife/flask-website-service:${{ env.VERSION }}
+
+
+
+            Build Time UTC:
+
+            ${{ env.BUILD_TIME_UTC }}
+
+
+
+            Build Time IST:
+
+            ${{ env.BUILD_TIME_IST }}
+
+
+
+            Deployment Time UTC:
+
+            ${{ env.DEPLOY_TIME_UTC }}
+
+
+
+            Deployment Time IST:
+
+            ${{ env.DEPLOY_TIME_IST }}
+
+
+
+            Deployment Platform:
+
+            Render
+
+
+
+            Trigger:
+
+            ${{ github.event_name }}
+
+
+
+            Status:
+
+            SUCCESS
+
+
+
+
+
+
+
+
+      # ------------------------------------------------------
+      # Deployment Summary
+      # ------------------------------------------------------
+
 
       - name: 📋 Deployment Summary
 
@@ -246,12 +406,15 @@ jobs:
 
           echo "================================="
 
+
           echo "🚀 Deployment Completed"
+
 
           echo ""
 
 
           echo "Repository:"
+
 
           echo "${{ github.repository }}"
 
@@ -261,15 +424,35 @@ jobs:
 
           echo "Version:"
 
+
           echo "${VERSION}"
 
 
           echo ""
 
 
-          echo "Trigger:"
+          echo "Commit:"
 
-          echo "${{ github.event_name }}"
+
+          echo "${COMMIT}"
+
+
+          echo ""
+
+
+          echo "Branch:"
+
+
+          echo "${BRANCH}"
+
+
+          echo ""
+
+
+          echo "Deployment Time:"
+
+
+          echo "${DEPLOY_TIME_IST}"
 
 
           echo ""
