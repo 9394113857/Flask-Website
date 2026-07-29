@@ -243,7 +243,8 @@ jobs:
           echo "COMMIT=${GITHUB_SHA}" >> $GITHUB_ENV
 
 
-          echo "BRANCH=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          # echo "BRANCH=${GITHUB_REF_NAME}" >> $GITHUB_ENV # We commented thsi because ealier we set as tag name as the branch name. So thats not the corrct branch name. We need to set it to main for CD to work properly.
+          echo "BRANCH=main" >> $GITHUB_ENV # Force branch to main becase earlier it shoed the version tag as the branch name. This is needed for CD to work properly.
 
 
           echo "BUILD_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
