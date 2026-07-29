@@ -1,41 +1,21 @@
 # ============================================================
 # 🚀 CD PIPELINE - FLASK WEBSITE SERVICE
 #
-# Deployment Strategy:
+# Features:
 #
-# CD DOES NOT RUN ON TAG PUSH.
-#
-# CI gives deployment permission after Docker image is ready.
-#
-#
-# Trigger sources:
-#
-#       ✅ CI repository dispatch
-#       ✅ Daily verification
-#       ✅ Manual execution
-#
-#
-# Deployment:
-#
-#       v1.0.5
-#
-#       If failed:
-#
-#       v1.0.4
-#
-#       If failed:
-#
-#       v1.0.3
-#
-#
-# Automatic rollback behaviour.
+# ✅ CI repository dispatch trigger
+# ✅ Daily verification trigger
+# ✅ Manual trigger
+# ✅ Deploy Docker version
+# ✅ Health check
+# ✅ Automatic rollback
+# ✅ Success email
+# ✅ Rollback email
 #
 # ============================================================
 
 
 name: 🚀 CD Flask Website Deployment
-
-
 
 
 
@@ -46,18 +26,6 @@ name: 🚀 CD Flask Website Deployment
 
 on:
 
-
-  # ----------------------------------------------------------
-  # Triggered only by successful CI
-  #
-  # CI completes:
-  #
-  #       Docker build
-  #       Docker push
-  #
-  # Then CD starts.
-  #
-  # ----------------------------------------------------------
 
   repository_dispatch:
 
@@ -70,15 +38,6 @@ on:
 
 
 
-
-
-  # ----------------------------------------------------------
-  # Daily deployment verification
-  #
-  # Runs every day at 04:00 UTC
-  #
-  # ----------------------------------------------------------
-
   schedule:
 
 
@@ -87,22 +46,7 @@ on:
 
 
 
-
-
-  # ----------------------------------------------------------
-  # Manual deployment
-  #
-  # GitHub Actions
-  #       |
-  #       ↓
-  # Run workflow
-  #
-  # ----------------------------------------------------------
-
   workflow_dispatch:
-
-
-
 
 
 
@@ -117,13 +61,8 @@ jobs:
 
 
 
-
-  # ==========================================================
-  # 🚀 DEPLOY JOB
-  # ==========================================================
-
-
   deploy:
+
 
 
     name: 🚀 Deploy With Automatic Rollback
@@ -135,19 +74,17 @@ jobs:
 
 
 
-
     steps:
 
 
 
 
+      # ======================================================
+      # CHECKOUT
+      # ======================================================
 
-      # ------------------------------------------------------
-      # Checkout repository
-      # ------------------------------------------------------
 
       - name: 📥 Checkout Repository
-
 
         uses: actions/checkout@v4
 
@@ -156,18 +93,12 @@ jobs:
 
 
 
+      # ======================================================
+      # GET DEPLOYMENT DETAILS
+      # ======================================================
 
-      # ------------------------------------------------------
-      # Get version from CI payload
-      #
-      # Example:
-      #
-      # v1.0.15
-      #
-      # ------------------------------------------------------
 
-      - name: 🏷️ Get Deployment Version
-
+      - name: 🏷️ Get Deployment Metadata
 
         run: |
 
@@ -175,25 +106,48 @@ jobs:
           echo "VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
 
 
+          echo "COMMIT=${{ github.event.client_payload.commit }}" >> $GITHUB_ENV
+
+
+          echo "BRANCH=main" >> $GITHUB_ENV
+
+
+          echo "DEPLOY_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+
+
+          echo "DEPLOY_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV
 
 
 
 
 
-      # ------------------------------------------------------
-      # Deployment safety hold
-      #
-      # Gives time before production deployment.
-      #
-      # ------------------------------------------------------
+      # ======================================================
+      # STORE PREVIOUS VERSION
+      # ======================================================
 
-      - name: ⏳ Deployment Safety Hold
 
+      - name: 💾 Load Previous Version
 
         run: |
 
 
-          echo "Holding deployment before production..."
+          echo "PREVIOUS_VERSION=${{ secrets.ROLLBACK_VERSION }}" >> $GITHUB_ENV
+
+
+
+
+
+      # ======================================================
+      # DEPLOYMENT WAIT
+      # ======================================================
+
+
+      - name: ⏳ Deployment Safety Hold
+
+        run: |
+
+
+          echo "Waiting before deployment..."
 
 
           sleep 120
@@ -203,23 +157,17 @@ jobs:
 
 
 
+      # ======================================================
+      # DEPLOY NEW VERSION
+      # ======================================================
 
-      # ------------------------------------------------------
-      # Deploy Application
-      #
-      # Calls Render deployment webhook.
-      #
-      # Sends Docker version tag.
-      #
-      # ------------------------------------------------------
 
-      - name: 🚀 Deploy Application
-
+      - name: 🚀 Deploy New Version
 
         run: |
 
 
-          echo "Deploying version: ${VERSION}"
+          echo "Deploying version ${VERSION}"
 
 
           curl -X POST \
@@ -232,47 +180,223 @@ jobs:
 
 
 
+      # ======================================================
+      # HEALTH CHECK
+      # ======================================================
 
 
-      # ------------------------------------------------------
-      # Deployment summary
-      # ------------------------------------------------------
+      - name: ❤️ Application Health Check
 
-      - name: 📋 Deployment Summary
+        id: health
+
+
+        continue-on-error: true
 
 
         run: |
 
 
-          echo "================================="
-
-          echo "🚀 Deployment Completed"
-
-          echo ""
+          echo "Checking application..."
 
 
-          echo "Repository:"
-
-          echo "${{ github.repository }}"
+          sleep 60
 
 
-          echo ""
+          curl --fail "${{ secrets.APPLICATION_HEALTH_URL }}"
 
 
-          echo "Version:"
-
-          echo "${VERSION}"
 
 
-          echo ""
 
 
-          echo "Trigger:"
-
-          echo "${{ github.event_name }}"
-
-
-          echo ""
+      # ======================================================
+      # AUTOMATIC ROLLBACK
+      # ======================================================
 
 
-          echo "================================="
+      - name: 🔄 Automatic Rollback
+
+        if: steps.health.outcome == 'failure'
+
+
+        run: |
+
+
+          echo "Health check failed"
+
+
+          echo "Rolling back to ${PREVIOUS_VERSION}"
+
+
+
+          curl -X POST \
+          -H "Content-Type: application/json" \
+          -d "{\"tag\":\"${PREVIOUS_VERSION}\"}" \
+          "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+
+
+
+
+
+
+      # ======================================================
+      # SUCCESS EMAIL
+      # ======================================================
+
+
+      - name: 📧 Send CD Success Email
+
+
+        if: steps.health.outcome == 'success'
+
+
+        uses: dawidd6/action-send-mail@v3
+
+
+        with:
+
+
+          server_address: ${{ secrets.SMTP_SERVER }}
+
+
+          server_port: ${{ secrets.SMTP_PORT }}
+
+
+          secure: true
+
+
+          username: ${{ secrets.SMTP_USERNAME }}
+
+
+          password: ${{ secrets.SMTP_PASSWORD }}
+
+
+          from: ${{ secrets.SMTP_USERNAME }}
+
+
+          to: ${{ secrets.EMAIL_TO }}
+
+
+          subject: "✅ CD SUCCESS | Flask Website"
+
+
+          body: |
+
+
+            🚀 DEPLOYMENT SUCCESS
+
+
+            Repository:
+            ${{ github.repository }}
+
+
+            Version:
+            ${{ env.VERSION }}
+
+
+            Commit:
+            ${{ env.COMMIT }}
+
+
+            Branch:
+            ${{ env.BRANCH }}
+
+
+            Deployment UTC:
+            ${{ env.DEPLOY_TIME_UTC }}
+
+
+            Deployment IST:
+            ${{ env.DEPLOY_TIME_IST }}
+
+
+            Status:
+            SUCCESS
+
+
+
+
+
+
+
+      # ======================================================
+      # ROLLBACK EMAIL
+      # ======================================================
+
+
+      - name: 📧 Send Rollback Email
+
+
+        if: steps.health.outcome == 'failure'
+
+
+        uses: dawidd6/action-send-mail@v3
+
+
+        with:
+
+
+          server_address: ${{ secrets.SMTP_SERVER }}
+
+
+          server_port: ${{ secrets.SMTP_PORT }}
+
+
+          secure: true
+
+
+          username: ${{ secrets.SMTP_USERNAME }}
+
+
+          password: ${{ secrets.SMTP_PASSWORD }}
+
+
+          from: ${{ secrets.SMTP_USERNAME }}
+
+
+          to: ${{ secrets.EMAIL_TO }}
+
+
+          subject: "⚠️ CD ROLLBACK | Flask Website"
+
+
+          body: |
+
+
+            ⚠️ DEPLOYMENT FAILED
+
+
+            AUTOMATIC ROLLBACK EXECUTED
+
+
+            Repository:
+            ${{ github.repository }}
+
+
+            Failed Version:
+            ${{ env.VERSION }}
+
+
+            Rollback Version:
+            ${{ env.PREVIOUS_VERSION }}
+
+
+            Commit:
+            ${{ env.COMMIT }}
+
+
+            Branch:
+            ${{ env.BRANCH }}
+
+
+            Time UTC:
+            ${{ env.DEPLOY_TIME_UTC }}
+
+
+            Time IST:
+            ${{ env.DEPLOY_TIME_IST }}
+
+
+            Status:
+            ROLLBACK COMPLETED
