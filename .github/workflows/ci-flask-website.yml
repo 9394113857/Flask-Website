@@ -1,10 +1,10 @@
 # ============================================================
 # 🚀 CI PIPELINE - FLASK WEBSITE SERVICE
 #
-# Workflow: 
+# Workflow:
 #
 # Normal push:
-#       ✅ Install dependencies 
+#       ✅ Install dependencies
 #       ✅ Run tests
 #
 # Pull Request:
@@ -167,6 +167,7 @@ jobs:
 
 
 
+
   # ==========================================================
   # 🐳 DOCKER RELEASE JOB
   # ==========================================================
@@ -240,11 +241,13 @@ jobs:
         run: |
 
 
+          echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+
+
           echo "COMMIT=${GITHUB_SHA}" >> $GITHUB_ENV
 
 
-          # echo "BRANCH=${GITHUB_REF_NAME}" >> $GITHUB_ENV # We commented thsi because ealier we set as tag name as the branch name. So thats not the corrct branch name. We need to set it to main for CD to work properly.
-          echo "BRANCH=main" >> $GITHUB_ENV # Force branch to main becase earlier it shoed the version tag as the branch name. This is needed for CD to work properly.
+          echo "BRANCH=main" >> $GITHUB_ENV
 
 
           echo "BUILD_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
@@ -253,7 +256,6 @@ jobs:
           echo "BUILD_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV
 
 
-          echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
 
 
 
@@ -320,7 +322,6 @@ jobs:
 
 
 
-
       - name: 🏷️ Create Latest Tag
 
         run: |
@@ -352,8 +353,6 @@ jobs:
       # ======================================================
       # 📧 CI SUCCESS EMAIL
       #
-      # Sent after Docker images are successfully pushed.
-      #
       # ======================================================
 
 
@@ -377,7 +376,7 @@ jobs:
 
 
           subject: |
-            ✅ CI Completed - Flask Website Service ${{ env.VERSION }}
+            ✅ CI SUCCESS | Flask Website ${{ env.VERSION }}
 
 
           to: ${{ secrets.EMAIL_TO }}
@@ -388,9 +387,11 @@ jobs:
 
           body: |
 
-            CI Pipeline Completed Successfully
 
-            =================================
+            🚀 CI PIPELINE COMPLETED
+
+
+            =============================
 
 
             Repository:
@@ -403,14 +404,14 @@ jobs:
             ${{ env.VERSION }}
 
 
+            Commit:
+
+            ${{ env.COMMIT }}
+
+
             Branch:
 
             ${{ env.BRANCH }}
-
-
-            Commit SHA:
-
-            ${{ env.COMMIT }}
 
 
             Docker Image:
@@ -423,19 +424,14 @@ jobs:
             pythoncodelife/flask-website-service:latest
 
 
-            Build Time UTC:
+            Build UTC:
 
             ${{ env.BUILD_TIME_UTC }}
 
 
-            Build Time IST:
+            Build IST:
 
             ${{ env.BUILD_TIME_IST }}
-
-
-            Workflow:
-
-            CI Flask Website Service
 
 
             Status:
@@ -443,9 +439,9 @@ jobs:
             SUCCESS
 
 
-            Next Step:
+            Next:
 
-            CD deployment will start automatically.
+            🚀 CD deployment triggered automatically
 
 
 
@@ -483,6 +479,7 @@ jobs:
 
 
       - name: 🚀 Trigger CD Deployment
+
 
         uses: peter-evans/repository-dispatch@v3
 
