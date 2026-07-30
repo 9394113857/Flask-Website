@@ -1,21 +1,38 @@
 # ============================================================
-# 🚀 CD PIPELINE - FLASK WEBSITE SERVICE
+# 🚀 CI PIPELINE - FLASK WEBSITE SERVICE
 #
-# Features:
+# Workflow:
 #
-# ✅ CI repository dispatch trigger
-# ✅ Daily verification trigger
-# ✅ Manual trigger
-# ✅ Deploy Docker version
-# ✅ Health check
-# ✅ Automatic rollback
-# ✅ Success email
-# ✅ Rollback email
+# Normal push:
+#       ✅ Install dependencies
+#       ✅ Run tests
+#
+# Pull Request:
+#       ✅ Install dependencies
+#       ✅ Run tests
+#
+# Version tag:
+#
+#       v1.0.0
+#       v1.0.1
+#
+#       ✅ Run tests
+#       ✅ Generate build metadata
+#       ✅ Build Docker image
+#       ✅ Push version image
+#       ✅ Push latest image
+#       ✅ Send CI email notification
+#       ✅ Wait for registry sync
+#       ✅ Trigger CD deployment
+#
+# Docker push NEVER happens on normal commits.
+#
+# CD starts ONLY after CI completes successfully.
 #
 # ============================================================
 
 
-name: 🚀 CD Flask Website Deployment
+name: 🚀 CI Flask Website Service
 
 
 
@@ -26,23 +43,20 @@ name: 🚀 CD Flask Website Deployment
 
 on:
 
+  push:
 
-  repository_dispatch:
+    branches:
 
-
-    types:
-
-
-      - deploy-release
+      - "**"
 
 
+    tags:
+
+      - "v*"
 
 
-  schedule:
 
-
-    - cron: "0 4 * * *"
-
+  pull_request:
 
 
 
@@ -61,11 +75,114 @@ jobs:
 
 
 
-  deploy:
+  # ==========================================================
+  # 🧪 TEST JOB
+  # ==========================================================
+
+
+  test:
+
+
+    name: 🧪 Application Tests
+
+
+    runs-on: ubuntu-latest
 
 
 
-    name: 🚀 Deploy With Automatic Rollback
+    steps:
+
+
+
+      - name: 📥 Checkout Repository
+
+        uses: actions/checkout@v4
+
+        with:
+
+          fetch-depth: 0
+
+          fetch-tags: true
+
+
+
+
+
+      - name: 🐍 Setup Python
+
+        uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.11"
+
+
+
+
+
+      - name: 📦 Install Dependencies
+
+        run: |
+
+          python -m pip install --upgrade pip
+
+          pip install -r requirements.txt
+
+          pip install pytest
+
+
+
+
+
+      - name: 🔍 Show Project Structure
+
+        run: |
+
+          pwd
+
+          ls -la
+
+          find . -maxdepth 2 -type d
+
+
+
+
+
+      - name: 🧪 Run Tests
+
+        env:
+
+          PYTHONPATH: .
+
+        run: |
+
+          pytest -v
+
+
+
+
+
+
+
+
+
+
+
+  # ==========================================================
+  # 🐳 DOCKER RELEASE JOB
+  # ==========================================================
+
+
+  docker-release:
+
+
+    name: 🐳 Build And Push Docker Image
+
+
+    needs: test
+
+
+    if: startsWith(github.ref, 'refs/tags/v')
 
 
     runs-on: ubuntu-latest
@@ -78,76 +195,271 @@ jobs:
 
 
 
-
-      # ======================================================
-      # CHECKOUT
-      # ======================================================
-
-
       - name: 📥 Checkout Repository
 
         uses: actions/checkout@v4
 
+        with:
+
+          fetch-depth: 0
+
+          fetch-tags: true
+
+
+
+
+
+      - name: 🔐 Docker Hub Login
+
+        uses: docker/login-action@v3
+
+        with:
+
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+
 
 
 
 
 
       # ======================================================
-      # GET DEPLOYMENT DETAILS
+      # 🏷️ BUILD METADATA
+      #
+      # Used for:
+      #
+      #       CI Email
+      #       CD Payload
+      #
       # ======================================================
 
 
-      - name: 🏷️ Get Deployment Metadata
+      - name: 🏷️ Set Build Metadata
 
         run: |
 
 
-          echo "VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
 
 
-          echo "COMMIT=${{ github.event.client_payload.commit }}" >> $GITHUB_ENV
+          echo "COMMIT=${GITHUB_SHA}" >> $GITHUB_ENV
 
 
           echo "BRANCH=main" >> $GITHUB_ENV
 
 
-          echo "DEPLOY_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+          echo "BUILD_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
 
-          echo "DEPLOY_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV
+          echo "BUILD_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV
 
 
 
 
 
-      # ======================================================
-      # STORE PREVIOUS VERSION
-      # ======================================================
 
 
-      - name: 💾 Load Previous Version
+      - name: 📄 Generate Build Info
 
         run: |
 
 
-          echo "PREVIOUS_VERSION=${{ secrets.ROLLBACK_VERSION }}" >> $GITHUB_ENV
+          cat > build_info.json << EOF
+
+          {
+
+            "version": "${VERSION}",
+
+            "commit": "${COMMIT}",
+
+            "branch": "${BRANCH}",
+
+            "build_time_utc": "${BUILD_TIME_UTC}",
+
+            "build_time_ist": "${BUILD_TIME_IST}"
+
+          }
+
+          EOF
+
+
 
 
 
 
 
       # ======================================================
-      # DEPLOYMENT WAIT
+      # 🐳 DOCKER BUILD
       # ======================================================
 
 
-      - name: ⏳ Deployment Safety Hold
+      - name: 🐳 Build Docker Image
 
         run: |
 
 
-          echo "Waiting before deployment..."
+          docker build \
+          -t pythoncodelife/flask-website-service:${VERSION} .
+
+
+
+
+
+
+
+      - name: 📤 Push Version Image
+
+        run: |
+
+
+          docker push pythoncodelife/flask-website-service:${VERSION}
+
+
+
+
+
+
+
+      - name: 🏷️ Create Latest Tag
+
+        run: |
+
+
+          docker tag \
+          pythoncodelife/flask-website-service:${VERSION} \
+          pythoncodelife/flask-website-service:latest
+
+
+
+
+
+
+
+      - name: 📤 Push Latest Image
+
+        run: |
+
+
+          docker push pythoncodelife/flask-website-service:latest
+
+
+
+
+
+
+
+      # ======================================================
+      # 📧 CI SUCCESS EMAIL
+      #
+      # ======================================================
+
+
+      - name: 📧 Send CI Success Email
+
+        uses: dawidd6/action-send-mail@v3
+
+        with:
+
+
+          server_address: ${{ secrets.SMTP_SERVER }}
+
+
+          server_port: ${{ secrets.SMTP_PORT }}
+
+
+          username: ${{ secrets.SMTP_USERNAME }}
+
+
+          password: ${{ secrets.SMTP_PASSWORD }}
+
+
+          subject: |
+            ✅ CI SUCCESS | Flask Website ${{ env.VERSION }}
+
+
+          to: ${{ secrets.EMAIL_TO }}
+
+
+          from: ${{ secrets.SMTP_USERNAME }}
+
+
+          body: |
+
+
+            🚀 CI PIPELINE COMPLETED
+
+
+            =============================
+
+
+            Repository:
+
+            ${{ github.repository }}
+
+
+            Version:
+
+            ${{ env.VERSION }}
+
+
+            Commit:
+
+            ${{ env.COMMIT }}
+
+
+            Branch:
+
+            ${{ env.BRANCH }}
+
+
+            Docker Image:
+
+            pythoncodelife/flask-website-service:${{ env.VERSION }}
+
+
+            Latest Image:
+
+            pythoncodelife/flask-website-service:latest
+
+
+            Build UTC:
+
+            ${{ env.BUILD_TIME_UTC }}
+
+
+            Build IST:
+
+            ${{ env.BUILD_TIME_IST }}
+
+
+            Status:
+
+            SUCCESS
+
+
+            Next:
+
+            🚀 CD deployment triggered automatically
+
+
+
+
+
+
+
+      # ======================================================
+      # Docker Registry Sync Wait
+      # ======================================================
+
+
+      - name: ⏳ Wait For Docker Registry Sync
+
+        run: |
+
+
+          echo "Waiting for Docker registry synchronization..."
 
 
           sleep 120
@@ -157,246 +469,46 @@ jobs:
 
 
 
-      # ======================================================
-      # DEPLOY NEW VERSION
-      # ======================================================
-
-
-      - name: 🚀 Deploy New Version
-
-        run: |
-
-
-          echo "Deploying version ${VERSION}"
-
-
-          curl -X POST \
-          -H "Content-Type: application/json" \
-          -d "{\"tag\":\"${VERSION}\"}" \
-          "${{ secrets.RENDER_DEPLOY_HOOK }}"
-
-
-
-
-
 
       # ======================================================
-      # HEALTH CHECK
+      # 🚀 TRIGGER CD
+      #
+      # Sends complete release information.
+      #
       # ======================================================
 
 
-      - name: ❤️ Application Health Check
-
-        id: health
+      - name: 🚀 Trigger CD Deployment
 
 
-        continue-on-error: true
-
-
-        run: |
-
-
-          echo "Checking application..."
-
-
-          sleep 60
-
-
-          curl --fail "${{ secrets.APPLICATION_HEALTH_URL }}"
-
-
-
-
-
-
-      # ======================================================
-      # AUTOMATIC ROLLBACK
-      # ======================================================
-
-
-      - name: 🔄 Automatic Rollback
-
-        if: steps.health.outcome == 'failure'
-
-
-        run: |
-
-
-          echo "Health check failed"
-
-
-          echo "Rolling back to ${PREVIOUS_VERSION}"
-
-
-
-          curl -X POST \
-          -H "Content-Type: application/json" \
-          -d "{\"tag\":\"${PREVIOUS_VERSION}\"}" \
-          "${{ secrets.RENDER_DEPLOY_HOOK }}"
-
-
-
-
-
-
-
-      # ======================================================
-      # SUCCESS EMAIL
-      # ======================================================
-
-
-      - name: 📧 Send CD Success Email
-
-
-        if: steps.health.outcome == 'success'
-
-
-        uses: dawidd6/action-send-mail@v3
+        uses: peter-evans/repository-dispatch@v3
 
 
         with:
 
 
-          server_address: ${{ secrets.SMTP_SERVER }}
+          token: ${{ secrets.CD_TRIGGER_TOKEN }}
 
 
-          server_port: ${{ secrets.SMTP_PORT }}
+          repository: ${{ github.repository }}
 
 
-          secure: true
+          event-type: deploy-release
 
 
-          username: ${{ secrets.SMTP_USERNAME }}
+          client-payload: |
 
 
-          password: ${{ secrets.SMTP_PASSWORD }}
+            {
 
+              "version": "${{ env.VERSION }}",
 
-          from: ${{ secrets.SMTP_USERNAME }}
+              "commit": "${{ env.COMMIT }}",
 
+              "branch": "${{ env.BRANCH }}",
 
-          to: ${{ secrets.EMAIL_TO }}
+              "build_time_utc": "${{ env.BUILD_TIME_UTC }}",
 
+              "build_time_ist": "${{ env.BUILD_TIME_IST }}"
 
-          subject: "✅ CD SUCCESS | Flask Website"
-
-
-          body: |
-
-
-            🚀 DEPLOYMENT SUCCESS
-
-
-            Repository:
-            ${{ github.repository }}
-
-
-            Version:
-            ${{ env.VERSION }}
-
-
-            Commit:
-            ${{ env.COMMIT }}
-
-
-            Branch:
-            ${{ env.BRANCH }}
-
-
-            Deployment UTC:
-            ${{ env.DEPLOY_TIME_UTC }}
-
-
-            Deployment IST:
-            ${{ env.DEPLOY_TIME_IST }}
-
-
-            Status:
-            SUCCESS
-
-
-
-
-
-
-
-      # ======================================================
-      # ROLLBACK EMAIL
-      # ======================================================
-
-
-      - name: 📧 Send Rollback Email
-
-
-        if: steps.health.outcome == 'failure'
-
-
-        uses: dawidd6/action-send-mail@v3
-
-
-        with:
-
-
-          server_address: ${{ secrets.SMTP_SERVER }}
-
-
-          server_port: ${{ secrets.SMTP_PORT }}
-
-
-          secure: true
-
-
-          username: ${{ secrets.SMTP_USERNAME }}
-
-
-          password: ${{ secrets.SMTP_PASSWORD }}
-
-
-          from: ${{ secrets.SMTP_USERNAME }}
-
-
-          to: ${{ secrets.EMAIL_TO }}
-
-
-          subject: "⚠️ CD ROLLBACK | Flask Website"
-
-
-          body: |
-
-
-            ⚠️ DEPLOYMENT FAILED
-
-
-            AUTOMATIC ROLLBACK EXECUTED
-
-
-            Repository:
-            ${{ github.repository }}
-
-
-            Failed Version:
-            ${{ env.VERSION }}
-
-
-            Rollback Version:
-            ${{ env.PREVIOUS_VERSION }}
-
-
-            Commit:
-            ${{ env.COMMIT }}
-
-
-            Branch:
-            ${{ env.BRANCH }}
-
-
-            Time UTC:
-            ${{ env.DEPLOY_TIME_UTC }}
-
-
-            Time IST:
-            ${{ env.DEPLOY_TIME_IST }}
-
-
-            Status:
-            ROLLBACK COMPLETED
+            }
