@@ -365,7 +365,7 @@ jobs:
 
 
           subject: |
-            🚀 CD SUCCESS | Flask Website ${ { env.VERSION } }
+            🚀 CD SUCCESS | Flask Website ${{ env.VERSION }}
 
 
           body: |
@@ -463,7 +463,7 @@ jobs:
 
 
           subject: |
-            ⚠️ CD ROLLBACK | Flask Website ${ { env.VERSION } }
+            ⚠️ CD ROLLBACK | Flask Website ${{ env.VERSION }}
 
 
           body: |
