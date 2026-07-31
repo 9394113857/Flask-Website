@@ -191,7 +191,15 @@ jobs:
 
           echo "BUILD_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
-          echo "BUILD_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV      - name: 📄 Generate Build Info
+          echo "BUILD_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV
+
+
+
+      # ======================================================
+      # 📄 GENERATE BUILD INFO
+      # ======================================================
+
+      - name: 📄 Generate Build Info
 
         run: |
 
