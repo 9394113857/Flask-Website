@@ -22,24 +22,20 @@
 #       ✅ Push version image
 #       ✅ Push latest image
 #       ✅ Send CI email notification
-#       ✅ Wait for registry sync
-#       ✅ Trigger CD deployment
 #
 # Docker push NEVER happens on normal commits.
 #
-# CD starts ONLY after CI completes successfully.
+# CI STOPS after Docker image push.
+#
+# CD is completely independent and is NOT triggered by CI.
 #
 # ============================================================
 
-
 name: 🚀 CI Flask Website Service
-
-
 
 # ============================================================
 # EVENTS
 # ============================================================
-
 
 on:
 
@@ -49,50 +45,35 @@ on:
 
       - "**"
 
-
     tags:
 
       - "v*"
 
-
-
   pull_request:
 
-
-
   workflow_dispatch:
-
-
-
-
 
 # ============================================================
 # JOBS
 # ============================================================
 
-
 jobs:
-
-
 
   # ==========================================================
   # 🧪 TEST JOB
   # ==========================================================
 
-
   test:
-
 
     name: 🧪 Application Tests
 
-
     runs-on: ubuntu-latest
-
-
 
     steps:
 
-
+      # ======================================================
+      # 📥 CHECKOUT
+      # ======================================================
 
       - name: 📥 Checkout Repository
 
@@ -104,9 +85,9 @@ jobs:
 
           fetch-tags: true
 
-
-
-
+      # ======================================================
+      # 🐍 PYTHON
+      # ======================================================
 
       - name: 🐍 Setup Python
 
@@ -116,9 +97,9 @@ jobs:
 
           python-version: "3.11"
 
-
-
-
+      # ======================================================
+      # 📦 INSTALL DEPENDENCIES
+      # ======================================================
 
       - name: 📦 Install Dependencies
 
@@ -130,9 +111,9 @@ jobs:
 
           pip install pytest
 
-
-
-
+      # ======================================================
+      # 🔍 PROJECT STRUCTURE
+      # ======================================================
 
       - name: 🔍 Show Project Structure
 
@@ -144,9 +125,9 @@ jobs:
 
           find . -maxdepth 2 -type d
 
-
-
-
+      # ======================================================
+      # 🧪 RUN TESTS
+      # ======================================================
 
       - name: 🧪 Run Tests
 
@@ -158,42 +139,21 @@ jobs:
 
           pytest -v
 
-
-
-
-
-
-
-
-
-
-
   # ==========================================================
   # 🐳 DOCKER RELEASE JOB
   # ==========================================================
 
-
   docker-release:
-
 
     name: 🐳 Build And Push Docker Image
 
-
     needs: test
-
 
     if: startsWith(github.ref, 'refs/tags/v')
 
-
     runs-on: ubuntu-latest
 
-
-
-
-
     steps:
-
-
 
       - name: 📥 Checkout Repository
 
@@ -205,10 +165,6 @@ jobs:
 
           fetch-tags: true
 
-
-
-
-
       - name: 🔐 Docker Hub Login
 
         uses: docker/login-action@v3
@@ -219,296 +175,201 @@ jobs:
 
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-
-
-
-
-
-
       # ======================================================
       # 🏷️ BUILD METADATA
-      #
-      # Used for:
-      #
-      #       CI Email
-      #       CD Payload
-      #
       # ======================================================
-
 
       - name: 🏷️ Set Build Metadata
 
         run: |
 
-
           echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
-
 
           echo "COMMIT=${GITHUB_SHA}" >> $GITHUB_ENV
 
-
           echo "BRANCH=main" >> $GITHUB_ENV
-
 
           echo "BUILD_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
-
-          echo "BUILD_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV
-
-
-
-
-
-
-
-      - name: 📄 Generate Build Info
+          echo "BUILD_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV      - name: 📄 Generate Build Info
 
         run: |
-
 
           cat > build_info.json << EOF
 
           {
-
             "version": "${VERSION}",
-
             "commit": "${COMMIT}",
-
             "branch": "${BRANCH}",
-
             "build_time_utc": "${BUILD_TIME_UTC}",
-
             "build_time_ist": "${BUILD_TIME_IST}"
-
           }
 
           EOF
 
-
-
-
-
-
-
       # ======================================================
-      # 🐳 DOCKER BUILD
+      # 🐳 BUILD DOCKER IMAGE
       # ======================================================
-
 
       - name: 🐳 Build Docker Image
 
         run: |
 
-
           docker build \
-          -t pythoncodelife/flask-website-service:${VERSION} .
+            -t pythoncodelife/flask-website-service:${VERSION} .
 
-
-
-
-
-
+      # ======================================================
+      # 📤 PUSH VERSION IMAGE
+      # ======================================================
 
       - name: 📤 Push Version Image
 
         run: |
 
-
           docker push pythoncodelife/flask-website-service:${VERSION}
 
-
-
-
-
-
+      # ======================================================
+      # 🏷️ CREATE LATEST TAG
+      # ======================================================
 
       - name: 🏷️ Create Latest Tag
 
         run: |
 
-
           docker tag \
-          pythoncodelife/flask-website-service:${VERSION} \
-          pythoncodelife/flask-website-service:latest
+            pythoncodelife/flask-website-service:${VERSION} \
+            pythoncodelife/flask-website-service:latest
 
-
-
-
-
-
+      # ======================================================
+      # 📤 PUSH LATEST IMAGE
+      # ======================================================
 
       - name: 📤 Push Latest Image
 
         run: |
 
-
           docker push pythoncodelife/flask-website-service:latest
-
-
-
-
-
-
 
       # ======================================================
       # 📧 CI SUCCESS EMAIL
-      #
       # ======================================================
 
-
       - name: 📧 Send CI Success Email
+
+        if: success()
 
         uses: dawidd6/action-send-mail@v3
 
         with:
 
-
           server_address: ${{ secrets.SMTP_SERVER }}
-
 
           server_port: ${{ secrets.SMTP_PORT }}
 
+          secure: true
 
           username: ${{ secrets.SMTP_USERNAME }}
 
-
           password: ${{ secrets.SMTP_PASSWORD }}
 
+          to: ${{ secrets.EMAIL_TO }}
+
+          from: ${{ secrets.SMTP_USERNAME }}
 
           subject: |
             ✅ CI SUCCESS | Flask Website ${{ env.VERSION }}
 
-
-          to: ${{ secrets.EMAIL_TO }}
-
-
-          from: ${{ secrets.SMTP_USERNAME }}
-
-
           body: |
 
+            🚀 CI PIPELINE COMPLETED SUCCESSFULLY
 
-            🚀 CI PIPELINE COMPLETED
-
-
-            =============================
-
+            =====================================
 
             Repository:
-
             ${{ github.repository }}
 
-
             Version:
-
             ${{ env.VERSION }}
 
-
             Commit:
-
             ${{ env.COMMIT }}
 
-
             Branch:
-
             ${{ env.BRANCH }}
 
-
             Docker Image:
-
             pythoncodelife/flask-website-service:${{ env.VERSION }}
 
-
             Latest Image:
-
             pythoncodelife/flask-website-service:latest
 
-
             Build UTC:
-
             ${{ env.BUILD_TIME_UTC }}
 
-
             Build IST:
-
             ${{ env.BUILD_TIME_IST }}
 
+            Triggered By:
+            ${{ github.actor }}
+
+            Event:
+            ${{ github.event_name }}
 
             Status:
+            ✅ SUCCESS
 
-            SUCCESS
+            Docker images have been published successfully.
 
-
-            Next:
-
-            🚀 CD deployment triggered automatically
-
-
-
-
-
-
+            CI pipeline completed.
 
       # ======================================================
-      # Docker Registry Sync Wait
+      # 📧 CI FAILURE EMAIL
       # ======================================================
 
+      - name: 📧 Send CI Failure Email
 
-      - name: ⏳ Wait For Docker Registry Sync
+        if: failure()
 
-        run: |
-
-
-          echo "Waiting for Docker registry synchronization..."
-
-
-          sleep 120
-
-
-
-
-
-
-
-      # ======================================================
-      # 🚀 TRIGGER CD
-      #
-      # Sends complete release information.
-      #
-      # ======================================================
-
-
-      - name: 🚀 Trigger CD Deployment
-
-
-        uses: peter-evans/repository-dispatch@v3
-
+        uses: dawidd6/action-send-mail@v3
 
         with:
 
+          server_address: ${{ secrets.SMTP_SERVER }}
 
-          token: ${{ secrets.CD_TRIGGER_TOKEN }}
+          server_port: ${{ secrets.SMTP_PORT }}
 
+          secure: true
 
-          repository: ${{ github.repository }}
+          username: ${{ secrets.SMTP_USERNAME }}
 
+          password: ${{ secrets.SMTP_PASSWORD }}
 
-          event-type: deploy-release
+          to: ${{ secrets.EMAIL_TO }}
 
+          from: ${{ secrets.SMTP_USERNAME }}
 
-          client-payload: |
+          subject: |
+            ❌ CI FAILED | Flask Website
 
+          body: |
 
-            {
+            ❌ CI PIPELINE FAILED
 
-              "version": "${{ env.VERSION }}",
+            =====================================
 
-              "commit": "${{ env.COMMIT }}",
+            Repository:
+            ${{ github.repository }}
 
-              "branch": "${{ env.BRANCH }}",
+            Ref:
+            ${{ github.ref_name }}
 
-              "build_time_utc": "${{ env.BUILD_TIME_UTC }}",
+            Commit:
+            ${{ github.sha }}
 
-              "build_time_ist": "${{ env.BUILD_TIME_IST }}"
+            Triggered By:
+            ${{ github.actor }}
 
-            }
+            Event:
+            ${{ github.event_name }}
+
+            Please review the GitHub Actions logs for the failure details.
