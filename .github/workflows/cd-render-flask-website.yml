@@ -80,7 +80,7 @@ jobs:
 
 
       # ======================================================
-      # 📥 CHECKOUT
+      # CHECKOUT
       # ======================================================
 
 
@@ -89,6 +89,11 @@ jobs:
 
         uses: actions/checkout@v4
 
+        with:
+
+          fetch-depth: 0
+
+          fetch-tags: true
 
 
 
@@ -112,7 +117,15 @@ jobs:
 
 
 
-          VERSION=$(git describe --tags --abbrev=0)
+          if git describe --tags --abbrev=0 >/dev/null 2>&1
+          then
+
+            VERSION=$(git describe --tags --abbrev=0)
+
+          else
+            VERSION="manual-deploy"
+
+          fi
 
 
 
