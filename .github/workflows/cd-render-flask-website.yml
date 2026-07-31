@@ -3,8 +3,7 @@
 #
 # Features:
 #
-# ✅ CI repository dispatch trigger
-# ✅ Daily 2 AM IST verification trigger
+# ✅ Daily 2 AM IST deployment trigger
 # ✅ Manual trigger
 # ✅ Deploy Docker version
 # ✅ Health check
@@ -12,6 +11,8 @@
 # ✅ Detailed deployment logs
 # ✅ Success email
 # ✅ Rollback email
+#
+# CI DOES NOT TRIGGER CD.
 #
 # ============================================================
 
@@ -28,25 +29,26 @@ name: 🚀 CD Flask Website Deployment
 on:
 
 
-  repository_dispatch:
-
-
-    types:
-
-
-      - deploy-release
-
-
-
-  # Daily 2 AM IST
+  # ==========================================================
+  # Daily 2:00 AM IST
+  #
   # IST = UTC +5:30
+  #
   # 2:00 AM IST = 20:30 UTC previous day
+  #
+  # ==========================================================
+
 
   schedule:
 
 
     - cron: "30 20 * * *"
 
+
+
+  # ==========================================================
+  # Manual Developer Trigger
+  # ==========================================================
 
 
   workflow_dispatch:
@@ -56,7 +58,7 @@ on:
 
 
 # ============================================================
-# JOB
+# JOBS
 # ============================================================
 
 
@@ -78,7 +80,7 @@ jobs:
 
 
       # ======================================================
-      # CHECKOUT
+      # 📥 CHECKOUT
       # ======================================================
 
 
@@ -92,7 +94,7 @@ jobs:
 
 
       # ======================================================
-      # METADATA
+      # 🏷️ LOAD DEPLOYMENT METADATA
       # ======================================================
 
 
@@ -103,39 +105,33 @@ jobs:
 
 
           echo "================================="
+
           echo "🏷️ DEPLOYMENT METADATA"
+
           echo "================================="
 
 
-          VERSION="${{ github.event.client_payload.version }}"
 
+          VERSION=$(git describe --tags --abbrev=0)
 
-          if [ -z "$VERSION" ]; then
-
-            VERSION=$(git describe --tags --abbrev=0)
-
-          fi
 
 
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
 
-          echo "COMMIT=${{ github.event.client_payload.commit }}" >> $GITHUB_ENV
+          echo "COMMIT=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
 
           echo "BRANCH=main" >> $GITHUB_ENV
 
-
-          echo "BUILD_TIME_UTC=${{ github.event.client_payload.build_time_utc }}" >> $GITHUB_ENV
-
-
-          echo "BUILD_TIME_IST=${{ github.event.client_payload.build_time_ist }}" >> $GITHUB_ENV
 
 
           echo "DEPLOY_TIME_UTC=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
 
           echo "DEPLOY_TIME_IST=$(TZ='Asia/Kolkata' date +'%Y-%m-%d %H:%M:%S IST')" >> $GITHUB_ENV
+
+
 
 
 
@@ -150,7 +146,7 @@ jobs:
 
 
       # ======================================================
-      # PREVIOUS VERSION
+      # 💾 LOAD PREVIOUS VERSION
       # ======================================================
 
 
@@ -167,19 +163,13 @@ jobs:
           echo "================================="
 
 
+
           echo "PREVIOUS_VERSION=${{ secrets.ROLLBACK_VERSION }}" >> $GITHUB_ENV
 
 
-          echo "Rollback Version: ${{ secrets.ROLLBACK_VERSION }}"
 
-
-
-
-
-
-
-      # ======================================================
-      # DEPLOY
+          echo "Rollback Version: ${{ secrets.ROLLBACK_VERSION }}"      # ======================================================
+      # 🚀 DEPLOY CURRENT VERSION
       # ======================================================
 
 
@@ -203,10 +193,14 @@ jobs:
 
 
 
+
+
           curl -X POST \
           -H "Content-Type: application/json" \
           -d "{\"tag\":\"${VERSION}\"}" \
           "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+
 
 
 
@@ -216,10 +210,8 @@ jobs:
 
 
 
-
-
       # ======================================================
-      # HEALTH CHECK
+      # ❤️ APPLICATION HEALTH CHECK
       # ======================================================
 
 
@@ -245,11 +237,17 @@ jobs:
 
 
 
+
+
           sleep 60
 
 
 
+
+
           curl --fail "${{ secrets.APPLICATION_HEALTH_URL }}"
+
+
 
 
 
@@ -259,10 +257,8 @@ jobs:
 
 
 
-
-
       # ======================================================
-      # ROLLBACK
+      # 🔄 AUTOMATIC ROLLBACK
       # ======================================================
 
 
@@ -287,10 +283,14 @@ jobs:
 
 
 
+
+
           curl -X POST \
           -H "Content-Type: application/json" \
           -d "{\"tag\":\"${PREVIOUS_VERSION}\"}" \
           "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+
 
 
 
@@ -300,10 +300,8 @@ jobs:
 
 
 
-
-
       # ======================================================
-      # FINAL VERIFY
+      # 🔎 FINAL PRODUCTION VERIFICATION
       # ======================================================
 
 
@@ -324,16 +322,10 @@ jobs:
 
 
 
-          curl --fail "${{ secrets.APPLICATION_HEALTH_URL }}"
 
 
-
-
-
-
-
-      # ======================================================
-      # SUCCESS EMAIL
+          curl --fail "${{ secrets.APPLICATION_HEALTH_URL }}"      # ======================================================
+      # 📧 SUCCESS EMAIL
       # ======================================================
 
 
@@ -351,28 +343,39 @@ jobs:
 
           server_address: ${{ secrets.SMTP_SERVER }}
 
+
           server_port: ${{ secrets.SMTP_PORT }}
+
 
           secure: true
 
+
           username: ${{ secrets.SMTP_USERNAME }}
+
 
           password: ${{ secrets.SMTP_PASSWORD }}
 
+
           from: ${{ secrets.SMTP_USERNAME }}
 
+
           to: ${{ secrets.EMAIL_TO }}
+
 
 
           subject: |
             🚀 CD SUCCESS | Flask Website ${{ env.VERSION }}
 
 
+
           body: |
+
 
             🚀 DEPLOYMENT SUCCESS
 
+
             ============================
+
 
 
             Repository:
@@ -380,9 +383,11 @@ jobs:
             ${{ github.repository }}
 
 
+
             Version:
 
             ${{ env.VERSION }}
+
 
 
             Commit:
@@ -390,19 +395,11 @@ jobs:
             ${{ env.COMMIT }}
 
 
+
             Branch:
 
             ${{ env.BRANCH }}
 
-
-            Build UTC:
-
-            ${{ env.BUILD_TIME_UTC }}
-
-
-            Build IST:
-
-            ${{ env.BUILD_TIME_IST }}
 
 
             Deploy UTC:
@@ -410,14 +407,23 @@ jobs:
             ${{ env.DEPLOY_TIME_UTC }}
 
 
+
             Deploy IST:
 
             ${{ env.DEPLOY_TIME_IST }}
 
 
+
             Health URL:
 
             ${{ secrets.APPLICATION_HEALTH_URL }}
+
+
+
+            Deployment Trigger:
+
+            Scheduled / Manual
+
 
 
             Status:
@@ -429,9 +435,8 @@ jobs:
 
 
 
-
       # ======================================================
-      # ROLLBACK EMAIL
+      # 📧 ROLLBACK EMAIL
       # ======================================================
 
 
@@ -444,33 +449,45 @@ jobs:
         uses: dawidd6/action-send-mail@v3
 
 
+
         with:
 
 
           server_address: ${{ secrets.SMTP_SERVER }}
 
+
           server_port: ${{ secrets.SMTP_PORT }}
+
 
           secure: true
 
+
           username: ${{ secrets.SMTP_USERNAME }}
+
 
           password: ${{ secrets.SMTP_PASSWORD }}
 
+
           from: ${{ secrets.SMTP_USERNAME }}
 
+
           to: ${{ secrets.EMAIL_TO }}
+
 
 
           subject: |
             ⚠️ CD ROLLBACK | Flask Website ${{ env.VERSION }}
 
 
+
           body: |
+
 
             ⚠️ DEPLOYMENT FAILED
 
+
             ============================
+
 
 
             Failed Version:
@@ -478,9 +495,11 @@ jobs:
             ${{ env.VERSION }}
 
 
+
             Rollback Version:
 
             ${{ env.PREVIOUS_VERSION }}
+
 
 
             Commit:
@@ -488,9 +507,11 @@ jobs:
             ${{ env.COMMIT }}
 
 
+
             Branch:
 
             ${{ env.BRANCH }}
+
 
 
             Deploy UTC:
@@ -498,14 +519,17 @@ jobs:
             ${{ env.DEPLOY_TIME_UTC }}
 
 
+
             Deploy IST:
 
             ${{ env.DEPLOY_TIME_IST }}
 
 
+
             Health URL:
 
             ${{ secrets.APPLICATION_HEALTH_URL }}
+
 
 
             Status:
