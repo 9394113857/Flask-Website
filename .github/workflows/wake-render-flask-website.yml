@@ -1,0 +1,200 @@
+
+name: Daily Render Flask Website Wake Up
+
+on:
+  schedule:
+    # Every day at 6:00 AM IST (00:30 UTC)
+    - cron: "30 0 * * *"
+
+  workflow_dispatch:
+
+jobs:
+  wake-website:
+    name: Wake Up Render Website
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ======================================================
+      # STEP 1: WAKE UP WEBSITE
+      # ======================================================
+
+      - name: Trigger Website And Capture Response
+        id: wakeup
+        continue-on-error: true
+
+        env:
+          WEBSITE_URL: ${{ secrets.APPLICATION_HEALTH_URL }}
+
+        run: |
+          echo "========================================"
+          echo "RENDER WEBSITE WAKE-UP"
+          echo "========================================"
+
+          echo "Website: $WEBSITE_URL"
+          echo "Schedule: Daily at 6:00 AM IST"
+
+          echo "Sending one HTTP GET request..."
+
+          if [ -z "$WEBSITE_URL" ]; then
+            echo "Website URL secret is missing."
+            exit 1
+          fi
+
+          RESPONSE_FILE="$RUNNER_TEMP/website-response.txt"
+
+          set +e
+
+          HTTP_STATUS=$(curl \
+            --silent \
+            --show-error \
+            --location \
+            --max-time 900 \
+            --output "$RESPONSE_FILE" \
+            --write-out "%{http_code}" \
+            "$WEBSITE_URL" 2>"$RUNNER_TEMP/curl-error.txt")
+
+          CURL_EXIT=$?
+
+          set -e
+
+          RESPONSE=$(cat "$RESPONSE_FILE" 2>/dev/null || true)
+          CURL_ERROR=$(cat "$RUNNER_TEMP/curl-error.txt" 2>/dev/null || true)
+
+          if [ "$CURL_EXIT" -eq 0 ] && [ "$HTTP_STATUS" = "200" ]; then
+            STATUS="SUCCESS"
+          else
+            STATUS="FAILED"
+          fi
+
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "Curl Exit Code: $CURL_EXIT"
+          echo "Result: $STATUS"
+
+          {
+            echo "RESPONSE_STATUS=$STATUS"
+            echo "HTTP_STATUS=$HTTP_STATUS"
+            echo "CURL_EXIT=$CURL_EXIT"
+
+            echo "RESPONSE<<EOF"
+            cat "$RESPONSE_FILE" 2>/dev/null || true
+            echo "EOF"
+
+            echo "CURL_ERROR<<EOF"
+            cat "$RUNNER_TEMP/curl-error.txt" 2>/dev/null || true
+            echo "EOF"
+
+          } >> "$GITHUB_ENV"
+
+          echo "Website request completed."
+
+      # ======================================================
+      # STEP 2: SEND EMAIL NOTIFICATION
+      # ======================================================
+
+      - name: Send Wake-Up Email
+
+        if: always()
+
+        uses: dawidd6/action-send-mail@v3
+
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          secure: true
+
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+
+          from: ${{ secrets.SMTP_USERNAME }}
+          to: ${{ secrets.EMAIL_TO }}
+
+          subject: "RENDER WAKE-UP ${{ env.RESPONSE_STATUS }} | Flask Website"
+
+          body: |
+            ========================================
+            DAILY RENDER WEBSITE WAKE-UP REPORT
+            ========================================
+
+            APPLICATION DETAILS
+
+            Application: Flask Website Service
+            Hosting Platform: Render
+
+            Website URL:
+            ${{ secrets.APPLICATION_HEALTH_URL }}
+
+            ========================================
+            SCHEDULE DETAILS
+            ========================================
+
+            Scheduled Time: Daily at 6:00 AM IST
+            Trigger Type: ${{ github.event_name }}
+            Workflow Run: ${{ github.run_number }}
+            Started At UTC: ${{ github.run_started_at }}
+
+            ========================================
+            HTTP REQUEST DETAILS
+            ========================================
+
+            Request Method: GET
+            Number Of Requests: 1
+            Maximum Wait Time: 15 Minutes
+
+            HTTP Status: ${{ env.HTTP_STATUS }}
+            Curl Exit Code: ${{ env.CURL_EXIT }}
+
+            ========================================
+            ACTUAL WEBSITE RESPONSE
+            ========================================
+
+            ${{ env.RESPONSE }}
+
+            ========================================
+            REQUEST ERROR DETAILS
+            ========================================
+
+            ${{ env.CURL_ERROR }}
+
+            ========================================
+            FINAL RESULT
+            ========================================
+
+            ${{ env.RESPONSE_STATUS }}
+
+            ========================================
+
+            This workflow sends one HTTP request
+            to wake up the Render Free Tier website.
+
+            It captures the actual HTTP response
+            and sends the details by email.
+
+            No CI execution.
+            No CD execution.
+            No Docker operations.
+            No deployment.
+
+            ========================================
+            DAILY RENDER WAKE-UP AUTOMATION
+            ========================================
+
+      # ======================================================
+      # STEP 3: FINAL WORKFLOW SUMMARY
+      # ======================================================
+
+      - name: Display Final Status
+
+        if: always()
+
+        run: |
+          echo "========================================"
+          echo "RENDER WEBSITE WAKE-UP COMPLETED"
+          echo "========================================"
+
+          echo "Website: ${{ secrets.APPLICATION_HEALTH_URL }}"
+          echo "Scheduled Time: 6:00 AM IST"
+          echo "HTTP Status: ${{ env.HTTP_STATUS }}"
+          echo "Result: ${{ env.RESPONSE_STATUS }}"
+
+          echo "========================================"
